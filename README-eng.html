@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Guide – AFK Bot for Minecraft Servers</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            border-left: 4px solid #4f46e5;
+            padding-left: 1.5rem;
+        }
+
+        .section h2 {
+            color: #4f46e5;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section h3 {
+            color: #374151;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin: 1.5rem 0 0.5rem 0;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            border: 1px solid #374151;
+        }
+
+        .json-block {
+            background: #065f46;
+            color: #d1fae5;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            border: 1px solid #047857;
+        }
+
+        .command-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .command-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .command-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #4f46e5;
+        }
+
+        .command-name {
+            color: #4f46e5;
+            font-weight: 600;
+            font-family: monospace;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .command-desc {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .command-syntax {
+            background: #1f2937;
+            color: #10b981;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .prereq-list {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .prereq-list h4 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .prereq-list ul {
+            color: #92400e;
+            padding-left: 1.5rem;
+        }
+
+        .prereq-list li {
+            margin-bottom: 0.25rem;
+        }
+
+        .warning {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .warning h4 {
+            color: #dc2626;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .info {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info h4 {
+            color: #1d4ed8;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #f8fafc;
+            padding: 2rem;
+            text-align: center;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        @media print {
+            .print-button { display: none; }
+            body { background: white; }
+            .container { box-shadow: none; }
+            .command-card:hover { transform: none; box-shadow: none; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .content { padding: 1rem; }
+            .print-button { position: static; margin: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">📄 Print PDF</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AFK Bot for Minecraft Servers</h1>
+            <p>Complete Installation and Usage Guide</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2>📋 Description</h2>
+                <p>This is an AFK bot for Minecraft, built with Mineflayer, that enables various operations via terminal commands. The bot works on any Minecraft server, whether cracked or premium, offers multiple real-time configuration commands, and supports multiple languages.</p>
+            </div>
+
+            <div class="section">
+                <h2>⚙️ Prerequisites</h2>
+                <div class="prereq-list">
+                    <h4>Required Software:</h4>
+                    <ul>
+                        <li>Node.js (version 14 or higher)</li>
+                        <li>NPM (to install dependencies)</li>
+                        <li>C++ Compiler (to build the C++ launcher, optional)</li>
+                    </ul>
+                </div>
+
+                <h3>Installing Dependencies</h3>
+                <div class="code-block">npm install mineflayer mineflayer-pathfinder minecraft-data express</div>
+            </div>
+
+            <div class="section">
+                <h2>🚀 Installation</h2>
+
+                <h3>1. Obtain the Project</h3>
+                <p>Download or clone the bot’s files locally without referencing any specific platform (e.g., GitHub).</p>
+
+                <h3>2. Install Dependencies</h3>
+                <div class="code-block">npm install</div>
+
+                <h3>3. Configure settings.json</h3>
+                <div class="json-block">{
+  "server": {
+    "ip": "play.example.com",
+    "port": 25565,
+    "version": "1.20.4"
+  },
+  "bot-account": {
+    "type": "mojang",
+    "username": "YourBotNameHere",
+    "password": ""
+  },
+  "language": "pt-pt",
+  "maxRam": "1G"
+}</div>
+
+                <div class="info">
+                    <h4>💡 Important Settings:</h4>
+                    <p><strong>server</strong>: Minecraft server settings (IP, port, version)<br>
+                    <strong>bot-account</strong>: account type (“mojang” or “microsoft”), username, and password<br>
+                    <strong>language</strong>: initial language (“pt-pt” or “eng”)<br>
+                    <strong>maxRam</strong>: maximum memory for the bot</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🌐 Languages</h2>
+                <p>Language files are located in:</p>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><code>lang/pt-pt.txt</code> – Portuguese</li>
+                    <li><code>lang/eng.txt</code> – English</li>
+                </ul>
+                <p style="margin-top: 1rem;">Each line follows the format <code>key=value</code>. To add phrases or adjust translations, edit the corresponding file.</p>
+            </div>
+
+            <div class="section">
+                <h2>⌨️ Available Commands</h2>
+                <p>All commands must be prefixed with <code>/</code> in the terminal:</p>
+
+                <div class="command-grid">
+                    <div class="command-card">
+                        <div class="command-name">/stop</div>
+                        <div class="command-desc">Stops the bot and exits the script</div>
+                        <div class="command-syntax">/stop</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/server</div>
+                        <div class="command-desc">Displays current server information</div>
+                        <div class="command-syntax">/server</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/changeserver</div>
+                        <div class="command-desc">Changes the server. Default port: 25565</div>
+                        <div class="command-syntax">/changeserver example.com:25570</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/changename</div>
+                        <div class="command-desc">Changes the bot’s username</div>
+                        <div class="command-syntax">/changename NewBotName</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/chat</div>
+                        <div class="command-desc">Sends a message in the game chat</div>
+                        <div class="command-syntax">/chat Hello everyone!</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/pos</div>
+                        <div class="command-desc">Displays the bot’s current position (x, y, z)</div>
+                        <div class="command-syntax">/pos</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/ping</div>
+                        <div class="command-desc">Displays the bot’s current ping (latency)</div>
+                        <div class="command-syntax">/ping</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/ram</div>
+                        <div class="command-desc">Restarts the bot applying the memory configuration</div>
+                        <div class="command-syntax">/ram</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/version</div>
+                        <div class="command-desc">Changes the server version and reconnects</div>
+                        <div class="command-syntax">/version 1.20.4</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/lang</div>
+                        <div class="command-desc">Changes the bot’s language</div>
+                        <div class="command-syntax">/lang pt-pt</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/changetype</div>
+                        <div class="command-desc">Changes the account type (mojang/microsoft)</div>
+                        <div class="command-syntax">/changetype microsoft</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/typeinfo</div>
+                        <div class="command-desc">Displays the current account type</div>
+                        <div class="command-syntax">/typeinfo</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/reload</div>
+                        <div class="command-desc">Clears the console and restarts the script</div>
+                        <div class="command-syntax">/reload</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/restart</div>
+                        <div class="command-desc">Alias for /reload</div>
+                        <div class="command-syntax">/restart</div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-name">/help</div>
+                        <div class="command-desc">Displays all available commands</div>
+                        <div class="command-syntax">/help</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔧 C++ Launcher</h2>
+                <p>The <code>run.cpp</code> file executes <code>index.js</code> using Node.js. To compile and use:</p>
+                <div class="code-block">g++ run.cpp -o run.exe
+./run.exe</div>
+            </div>
+
+            <div class="section">
+                <h2>💡 Usage Example</h2>
+                <h3>1. Start the Bot</h3>
+                <div class="code-block">run.exe
+# or directly
+node index.js</div>
+
+                <h3>2. Using Commands</h3>
+                <div class="code-block">&gt; /server
+Current server information: play.example.com:25565 (v1.20.4)
+
+&gt; /changetype microsoft
+Changing the bot’s account type to microsoft
+Please enter the Microsoft account email:</div>
+            </div>
+
+            <div class="section">
+                <h2>📝 License</h2>
+                <p>This project is licensed under the MIT License.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🤖 AFK Bot for Minecraft Servers – Help Guide in Portuguese</p>
+            <p>For more information and to review, visit my official platforms:</p>
+            <p>
+                YouTube: <a href="https://www.youtube.com/@strefiz" target="_blank">https://www.youtube.com/@strefiz</a><br>
+                Twitch: <a href="https://www.twitch.tv/strefiz" target="_blank">https://www.twitch.tv/strefiz</a><br>
+                Twitter (X): <a href="https://x.com/Strefiz" target="_blank">https://x.com/Strefiz</a><br>
+                Modrinth: <a href="https://modrinth.com/user/Strefiz_" target="_blank">https://modrinth.com/user/Strefiz_</a><br>
+                CurseForge: <a href="https://www.curseforge.com/members/strefiz_/projects" target="_blank">https://www.curseforge.com/members/strefiz_/projects</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

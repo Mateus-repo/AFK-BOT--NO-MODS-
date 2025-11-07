@@ -1,0 +1,14 @@
+{
+  "server": {
+    "ip": "",
+    "port": 25565,
+    "version": "1.12.1"
+  },
+  "bot-account": {
+    "type": "mojang",
+    "username": "bot_placeholder",
+    "password": ""
+  },
+  "language": "eng",
+  "maxRam": "1G"
+}
