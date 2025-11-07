@@ -1,0 +1,2 @@
+# AFK-BOT (NO MODS)
+
