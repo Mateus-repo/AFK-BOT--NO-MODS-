@@ -149,11 +149,11 @@ Por favor, insira o e-mail da conta Microsoft:
 
 ## Auditoria e Contato
 Todas as auditorias, relatórios de erros e solicitações de recursos devem ser enviadas diretamente para minhas plataformas oficiais abaixo:
-- **YouTube**: https://www.youtube.com/@strefiz
-- **Twitch**: https://www.twitch.tv/strefiz
-- **Twitter (X)**: https://x.com/Strefiz
-- **Modrinth**: https://modrinth.com/user/Strefiz_
-- **CurseForge**: https://www.curseforge.com/members/strefiz_/projects
+- **YouTube:** "https://www.youtube.com/@strefiz"  
+- **Twitch:** "https://www.twitch.tv/strefiz"  
+- **Twitter (X):** "https://x.com/Strefiz"  
+- **Modrinth:** "https://modrinth.com/user/Strefiz_"  
+- **CurseForge:** "https://www.curseforge.com/members/strefiz_/projects"  
 
 ## Licença
 Este projeto está licenciado sob a Licença MIT.

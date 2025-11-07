@@ -149,11 +149,11 @@ Please enter the Microsoft account email:
 
 ## Audit and Contact
 All audits, bug reports, and feature requests should be sent directly to my official platforms below:
-- **YouTube:** https://www.youtube.com/@strefiz  
-- **Twitch:** https://www.twitch.tv/strefiz  
-- **Twitter (X):** https://x.com/Strefiz  
-- **Modrinth:** https://modrinth.com/user/Strefiz_  
-- **CurseForge:** https://www.curseforge.com/members/strefiz_/projects  
+- **YouTube:** "https://www.youtube.com/@strefiz"  
+- **Twitch:** "https://www.twitch.tv/strefiz"  
+- **Twitter (X):** "https://x.com/Strefiz"  
+- **Modrinth:** "https://modrinth.com/user/Strefiz_"  
+- **CurseForge:** "https://www.curseforge.com/members/strefiz_/projects"  
 
 ## License
 This project is licensed under the MIT License.
