@@ -1,0 +1,13 @@
+{
+  "name": "afk-bot",
+  "version": "3.0.0",
+  "description": "Bot AFK para Minecraft Java compativel com Windows 7 x86 e MC 26.3",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.39.0"
+  },
+  "license": "MIT"
+}

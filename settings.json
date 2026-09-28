@@ -1,0 +1,24 @@
+{
+  "server": {
+    "ip": "localhost",
+    "port": 25565,
+    "version": "26.3"
+  },
+  "bots": [
+    {
+      "username": "AFK_Bot"
+    }
+  ],
+  "movement": {
+    "enabled": true,
+    "intervalSeconds": 20,
+    "actionDurationMs": 800,
+    "radius": 3
+  },
+  "reconnect": {
+    "enabled": true,
+    "initialDelaySeconds": 5,
+    "maxDelaySeconds": 60
+  },
+  "maxRam": "512M"
+}
