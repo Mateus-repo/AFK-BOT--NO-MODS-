@@ -279,6 +279,30 @@ if (!pkg) {
   }
 }
 
+// ------------------------------------------- 9. testes (npm test)
+{
+  const temTestes = fs.existsSync(path.join(root, 'test', 'testes.js'))
+  if (!temTestes) {
+    nota('aviso', 'testes', 'sem test/testes.js — não há caracterização do comportamento')
+  } else {
+    try {
+      const r = execFileSync(process.execPath, [path.join(root, 'test', 'testes.js')], {
+        cwd: root,
+        encoding: 'utf8',
+        stdio: 'pipe',
+        timeout: 60000
+      })
+      const resumo = (r.match(/(\d+) passaram, (\d+) falharam/) || [])[0] || ''
+      out.ok(`testes: ${resumo || 'sem resumo'}`)
+    } catch (err) {
+      const saida = `${err.stdout || ''}${err.stderr || ''}`
+      const linhas = saida.split(/\r?\n/).filter((l) => l.includes('FALHA'))
+      for (const l of linhas.slice(0, 6)) nota('erro', 'testes', l.trim())
+      if (!linhas.length) nota('erro', 'testes', 'os testes falharam (ver node test/testes.js)')
+    }
+  }
+}
+
 // ------------------------------------------------------------------- saída
 if (comoJson) {
   console.log(

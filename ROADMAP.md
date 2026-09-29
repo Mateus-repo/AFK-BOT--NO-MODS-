@@ -30,8 +30,9 @@ Mínimo de Node em uso: **14.21.3** (última série do Node com suporte a Window
 
 ## Fase 2 · Blindar o núcleo · estado: **em curso** · dona: código (a dividir entre `modded` para a ligação e as restantes para o resto)
 
-> Feito em 2026-09-29: leitura validada da configuração (`configRead`), escrita que preserva campos desconhecidos (`configSave`) com cópia `.bak` no `/default`, reconexão automática com recuo exponencial (1s a 60s, 10 tentativas) e diagnóstico da razão de expulsão.
-> Falta: separar o `index.js` em módulos, `replit.nix` com Node actualizado, e **testar tudo a correr** — nenhuma linha disto foi executada.
+> **Feito em 2026-09-29:** configuração validada e escrita sem perder campos (`src/config.js`), reconexão com recuo exponencial (`src/reconnect.js`), idiomas (`src/i18n.js`) e log (`src/log.js`) extraídos do `index.js`, 35 testes que correm sem servidor (`npm test`), `replit.nix` com Node actualizado.
+> **Bug encontrado pelos testes:** depois de `/changeserver` ou `/changename`, o bot voltava a ligar com os valores antigos, porque a configuração em `index.js` deixou de ser o mesmo objecto que a do módulo. Corrigido.
+> **Falta:** mover `createBot()` e os comandos para módulos próprios (a composição continua no `index.js`), e **um teste a correr contra um servidor a sério** — os testesArrancados usam Mineflayer simulado.
 
 - **Objectivo**: o bot não perde configuração, não rebenta com ficheiros inválidos e volta sozinho quando a ligação cai.
 - **Inclui**: validação e valores por omissão ao ler `settings.json`; reescrita do ficheiro que **preserve campos desconhecidos** (hoje `changeServer()` regrava o ficheiro inteiro); reconexão automática com recuo exponencial e limite de tentativas; diagnóstico nos eventos `kicked` e `end`; separação do `index.js` monolítico em módulos pequenos (configuração, idiomas, log, ligação, comandos) — só depois da Fase 1 estar verde.

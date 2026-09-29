@@ -14,7 +14,7 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 4. **Estrutura só com aprovação.** Mover, renomear ou apagar ficheiro é sempre plano primeiro, execução depois (skill `organizar-projeto`). "Organiza" não autoriza apagar.
 5. **Só factos verificados no `PROGRESSO.md`.** Não se marca como feito o que não foi corrido ou tested.
 6. **Segredos nunca entram no git.** `settings.json`, `launcher_accounts.json`, `logs/` e contas do launcher ficam de fora (verificação automática: `.opencode/scripts/check-secrets.mjs`).
-7. **Verifica antes de guardar.** `node .opencode/scripts/verificar.mjs` tem de estar sem erros antes de um commit.
+7. **Verifica antes de guardar.** `node .opencode/scripts/verificar.mjs` tem de estar sem erros antes de um commit; isso inclui `npm test`, que corre sem ligar a servidor nenhum. Testes que precisem de servidor são uma excepção e estão marcados como tal.
 8. **Pequeno e reversível.** Mudanças pequenas, um motivo por commit. Nada de refactor "de passagem".
 9. **Node mínimo 14.21.3** — o projecto tem de correr em Windows 7, e o Node 14 é a última série que lá corre. Nada de sintaxe nem de dependência que só exista a partir do Node 16 sem dizer isso primeiro. `node .opencode/scripts/verificar-node.mjs` trata disso.
 10. **Commitar e fazer push sem perguntar.** O dono do projecto deu autorização permanente (2026-09-29): assim que uma tarefa estiver verificada e coerente, faz-se o commit atómico e o `push` para o branch de trabalho, sem pedir confirmação. A protecção é o método — alterações pequenas, um motivo por commit, `verificar.mjs` limpo, segredos bloqueados, nunca `--force` e nunca directo para `main`.
@@ -35,7 +35,7 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 |---|---|---|
 | `index.js` — função do comando + `case` no `switch` | comandos do terminal | `novo-comando` |
 | `index.js` — `createBot()`, eventos, reconexão | camada de ligação | `modded` |
-| `index.js` — resto da estrutura interna | código | pela skill que está a executar a tarefa |
+| `index.js` — composição, ligação e comandos | comandos: `novo-comando`; ligação: `modded` |
 | `lang/*.txt` | idiomas (`chave=valor`) | `traducoes` |
 | `settings.json` | configuração em uso (o bot reescreve) | ninguém — nunca versionar |
 | `default.json` | modelo de configuração | `organizar-projeto` |
@@ -111,6 +111,7 @@ node .opencode/scripts/verificar.mjs --rapido
 node .opencode/scripts/check-secrets.mjs    # segredos (também: --staged, --files, --json)
 node .opencode/scripts/lang-keys.mjs        # chaves de idioma (também: --falta, --json)
 node .opencode/scripts/verificar-node.mjs    # compatibilidade com o Node mínimo (também: --rapido, --json)
+npm test                                       # testes (não ligam a servidores)
 ```
 
 Os caminhos nos comandos das skills são **relativos à raiz do repositório**.

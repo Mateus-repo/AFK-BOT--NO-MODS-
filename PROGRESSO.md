@@ -9,19 +9,20 @@
 - `verificar.mjs` está com **0 erros e 3 avisos** (versão `2.1` fora de `X.Y.Z`, `node_modules` por instalar, chaves só do launcher em `en-us.txt`).
 - Criada a camada de agente: `AGENTS.md`, 13 skills em `.opencode/skills/`, 4 scripts em `.opencode/scripts/`, `IDEIAS.md` e `ROADMAP.md`.
 - **Requisitos transversais registados** (2026-09-29): correr em **Windows 7**, funcionar nas **versões mais recentes do Minecraft** e funcionar com **mods de qualquer loader**. Mínimo de Node **14.21.3**, declarado em `package.json` e verificado por `verificar-node.mjs`.
-- **Fase 2 começada**: a configuração passa a ser lida com validação (`configRead`), gravada sem perder campos desconhecidos (`configSave`) e o bot voltou a ligar-se sozinho quando a ligação cai, com recuo exponencial até 60 segundos e limite de 10 tentativas.
+- **Fase 2 praticamente fechada**: configuração validada, gravação sem perder campos, reconexão automática, e a lógica de configuração/idiomas/log/reconexão extraída do `index.js` para `src/`. **35 testes que correm sem servidor** (`npm test`, integrado no `verificar.mjs`).
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
 ## Em curso
 
-Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em módulos ainda por fazer.
+Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios, e um teste a correr contra um servidor a sério.
 
 ## Próximos passos
 
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
-- [ ] (Fase 2) **Testar a configuração e a reconexão a correr** (é o que falta para a fase estar fechada)
+- [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
+- [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
 - [ ] (Fase 2) `replit.nix`: trocar `nodejs-14_x` por uma versão suportada
 - [ ] (Fase 3) `"version": "auto"` com detecção da versão do servidor e comando `/diagnostico`
@@ -32,7 +33,7 @@ Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em 
 
 - **Nada foi testado a correr.** O `index.js` restaurado é o mesmo da v2.1 e não foi executado uma única vez nesta sessão. Antes de confiar em qualquer coisa, `npm install` e um teste num servidor de testes.
 - **Chaves do launcher alinhadas** — `error_no_version`, `error_node_fail` e as `msg_*` passaram para os três idiomas; os `lang/*.txt` têm agora as mesmas 69 chaves.
-- **Configuração e reconexão corrigidas, por testar** — `configRead`/`configSave` e a reconexão com recuo exponencial entraram hoje e nunca foram executadas. Se houver erro de sintaxe em runtime, aparece no primeiro arranque.
+- **O arranque foi testado, a ligação não** — `test/arranque.js` arranca o `index.js` a sério com o Mineflayer simulado (12 verificações), e `test/testes.js` cobre os módulos (23). Nenhum dos dois fala com um servidor, e o Mineflayer real nunca foi corrido por esta sessão.
 - **A reconexão pode ser agressiva** — 10 tentativas com recuo até 60 s dão quase 5 minutos a tentar. Num servidor que recusa a conta, é isso que o utilizador vai ver.
 - **Windows 7 x mods x versões novas não cabem juntos** — o Java 8 é o último que corre em Windows 7, e o Minecraft 1.20.5+ e o Via actual precisam de Java 21. Num PC com Windows 7, o sidecar só deve servir de imediatamente versões mais antigas. **Por confirmar.**
 - **O launcher não está preparado para o Windows 7** — o `run.cpp` instala sempre o Node 22.16.0 de um MSI que não existe no repositório, e o Node 22 não corre em Windows 7. Ideia I-007.
@@ -56,6 +57,21 @@ Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em 
 
 ## Diário de sessões
 
+
+### 2026-09-29 (quarta sessão)
+
+**Feito — módulos e testes**
+- `src/config.js`, `src/i18n.js`, `src/log.js` e `src/reconnect.js` extraídos do `index.js`. Dependências injectadas, por isso não precisam de Mineflayer para serem testados. O `index.js` passou de ~660 para ~430 linhas e agora é sobretudo composição.
+- `test/testes.js` (23 testes): leitura de configuração inválida, gravação que preserva campos desconhecidos, idiomas coerentes entre ficheiros, log e recuo exponencial.
+- `test/arranque.js` + `test/harness.js` (12 verificações): arrancam o `index.js` de verdade com o Mineflayer e o readline substituídos, enviam comandos e verificam o que ficou gravado. **Não liga a servidor nenhum.**
+- `npm test` corre os dois; o `verificar.mjs` ganhou o bloco 9 e passa a falhar se os testes falharem.
+- `replit.nix` com `pkgs.nodejs-20_x`.
+
+**Bug encontrado e corrigido**
+- Depois de `/changeserver` ou `/changename`, o bot voltava a ligar com os valores antigos: a configuração mantida no `index.js` deixou de ser o mesmo objecto que a do módulo depois da refactorização. Passou a reatribuir em cada gravação. **O teste de arranque é que apanhou isto** — sem ele, o bug ia para o utilizador.
+
+**Nota honesta**
+- Os testes provam o arranque e a configuração, não o Mineflayer real. A primeira vez que o `index.js` ligar a um servidor a sério continua por fazer, e é o que está em *Próximos passos*.
 
 ### 2026-09-29 (terceira sessão)
 
