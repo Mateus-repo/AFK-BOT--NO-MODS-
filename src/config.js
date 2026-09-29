@@ -13,7 +13,13 @@ const FALLBACK_CONFIG = {
   server: { ip: '', port: 25565, version: '1.20.4' },
   'bot-account': { type: 'mojang', username: 'bot_placeholder', password: '' },
   language: 'eng',
-  maxRam: '1G'
+  maxRam: '1G',
+  movement: {
+    enabled: true,
+    activeDurationSeconds: 180,
+    pauseDurationSeconds: 30,
+    radius: 1.2
+  }
 }
 
 const TIPOS_CONTA = ['mojang', 'microsoft']
@@ -40,6 +46,9 @@ function normalizar(config, base) {
   }
   if (final['bot-account'] && !TIPOS_CONTA.includes(final['bot-account'].type)) {
     final['bot-account'].type = 'mojang'
+  }
+  if (final.movement) {
+    final.movement = require('./movimento').normalizar(final.movement)
   }
   return final
 }

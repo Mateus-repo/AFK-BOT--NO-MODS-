@@ -18,6 +18,7 @@ const { createConfig } = require('./src/config');
 const { createI18n } = require('./src/i18n');
 const { createLog } = require('./src/log');
 const { createReconnect } = require('./src/reconnect');
+const { criarMovimento } = require('./src/movimento');
 
 const configPath = path.join(__dirname, 'settings.json');
 const defaultConfigPath = path.join(__dirname, 'default.json');
@@ -50,6 +51,7 @@ const RECONNECT = createReconnect({
 
 let bot;
 let currentLang = 'eng';
+let movimento = null;
 
 // Carrega um idioma; devolve false se o ficheiro não existir
 function loadLanguage(lang) {
@@ -112,6 +114,40 @@ function promptServerSetup(callback) {
   });
 }
 
+/**
+ * Liga ou desliga o movimento anti-AFK sem mexer na configuração.
+ * Para mudar a configuração, editar o settings.json.
+ */
+function changeMovement(estado) {
+  if (!estado) {
+    if (movimento) {
+      console.log(`${t('movement_stopped')} ${t('cmd_andar')}`);
+      return;
+    }
+    console.log(t('syntax_andar'));
+    return;
+  }
+  if (estado !== 'on' && estado !== 'off') {
+    console.log(t('syntax_andar'));
+    return;
+  }
+  if (estado === 'off') {
+    desligarMovimento();
+    console.log(t('movement_stopped'));
+    return;
+  }
+  if (config.movement && config.movement.enabled === false) {
+    config.movement.enabled = true;
+  }
+  if (bot && bot.entity && bot.entity.position) {
+    ligarMovimento(bot.entity.position);
+  } else {
+    console.log(t('chat_bot_not_connected'));
+    return;
+  }
+  console.log(t('movement_started'));
+}
+
 // Função para recarregar/reiniciar o script
 function reloadScript() {
   // Limpa console
@@ -147,6 +183,10 @@ function createBot() {
   bot.on('spawn', () => {
     RECONNECT.reset();
     log(t('bot_has_arrived'));
+    // O movimento só faz sentido com o bot dentro do mundo
+    if (bot && bot.entity && bot.entity.position) {
+      ligarMovimento(bot.entity.position);
+    }
   });
 
   bot.on('kicked', (reason, loggedIn) => {
@@ -159,6 +199,7 @@ function createBot() {
 
   bot.on('end', () => {
     log(t('connection_closed'), 'WARN');
+    desligarMovimento();
     RECONNECT.agendar(t('connection_closed'));
   });
 }
@@ -178,6 +219,26 @@ function formatReason(reason) {
     }
   }
   return String(reason);
+}
+
+/**
+ * Liga o movimento anti-AFK depois de o bot entrar no mundo.
+ * O módulo decide se liga ou não, consoante a configuração.
+ */
+function ligarMovimento(posicao) {
+  if (!bot) return;
+  if (movimento) movimento.parar();
+  movimento = criarMovimento({ bot, config: config.movement, log, t });
+  if (!movimento.iniciar(posicao)) {
+    log(t('movement_disabled_in_config'), 'INFO');
+  }
+}
+
+function desligarMovimento() {
+  if (movimento) {
+    movimento.parar();
+    movimento = null;
+  }
 }
 
 // Comandos auxiliares
@@ -292,6 +353,7 @@ function changeLanguage(newLang) {
 function stopBot() {
   // Uma paragem propositada não deve ligar-se outra vez
   RECONNECT.desativar();
+  desligarMovimento();
   if (bot) bot.quit('Shutting down');
   process.exit(0);
 }
@@ -413,6 +475,7 @@ function showHelp() {
   console.log(t('help_command_pos'));
   console.log(t('help_command_ping'));
   console.log(t('help_command_ram'));
+  console.log(t('help_command_andar'));
   console.log(t('help_command_version'));
   console.log(t('help_command_lang'));
   console.log(t('help_command_changetype'));
@@ -499,6 +562,9 @@ rl.on('line', (line) => {
       break;
     case 'ram':
       changeRAM();
+      break;
+    case 'andar':
+      changeMovement(args[0]);
       break;
     case 'version':
       changeVersion(args[0]);

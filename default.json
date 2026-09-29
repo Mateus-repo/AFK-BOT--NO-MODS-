@@ -10,5 +10,11 @@
     "password": ""
   },
   "language": "eng",
-  "maxRam": "1G"
+  "maxRam": "1G",
+  "movement": {
+    "enabled": true,
+    "activeDurationSeconds": 180,
+    "pauseDurationSeconds": 30,
+    "radius": 1.2
+  }
 }
