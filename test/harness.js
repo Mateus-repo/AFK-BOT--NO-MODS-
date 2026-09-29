@@ -104,7 +104,7 @@ setTimeout(() => {
   // Comandos que não devem rebentar
   const comandos = [
     '/server', '/typeinfo', '/ping', '/pos', '/help', '/comando-que-nao-existe',
-    '/version', '/lang', '/andar', '/andar on', '/andar nope', '/bots', '/andar off'
+    '/version', '/lang', '/andar', '/andar on', '/andar nope', '/bots', '/diagnostico', '/andar off'
   ];
   for (const linha of comandos) {
     handlerDeLinha(linha);

@@ -20,6 +20,7 @@ const { createLog } = require('./src/log');
 const { createReconnect } = require('./src/reconnect');
 const { criarMovimento } = require('./src/movimento');
 const { gerarNome, normalizarBots, criarGerenciador } = require('./src/sessoes');
+const deteccao = require('./src/deteccao');
 
 const configPath = path.join(__dirname, 'settings.json');
 const defaultConfigPath = path.join(__dirname, 'default.json');
@@ -54,6 +55,8 @@ const RECONNECT = createReconnect({
 // que os comandos antigos (/pos, /ping, /chat) não mudem de comportamento.
 let bot = null;
 let gerenciador = null;
+// O que descobrimos sobre o servidor: versão, protocolo, jogadores.
+let infoServidor = null;
 let currentLang = 'eng';
 let movimento = null;
 
@@ -236,7 +239,7 @@ function criarSessao(configBot) {
       s.bot = mineflayer.createBot({
         host: config.server.ip,
         port: config.server.port,
-        version: config.server.version,
+        version: versaoParaLigar(),
         username: s.nome,
         password: authMethod === 'microsoft' ? configBot.password || undefined : undefined,
         auth: authMethod
@@ -324,6 +327,104 @@ function reiniciarSessoes(indice) {
     }
   }
   createBot();
+}
+
+/**
+ * Descobre com que versão falar com o servidor.
+ *
+ * Com "version": "auto" faz um pedido de estado ao servidor e escolhe a versão
+ * da biblioteca cujo protocolo bate certo. Se a detecção falhar, não deixa o
+ * utilizador sem bot: cai na versão mais recente que a biblioteca conhece.
+ * Nunca lança.
+ */
+async function detectarVersao() {
+  if (!config || !config.server || !config.server.ip) {
+    infoServidor = null;
+    return null;
+  }
+  const configurada = config.server.version;
+  const conhecidas = deteccao.versoesConhecidas();
+  const maisRecente = conhecidas.length ? conhecidas[conhecidas.length - 1] : '1.20.4';
+
+  if (configurada && configurada !== 'auto') {
+    const escolha = deteccao.escolherVersao({ configurada, conhecidas });
+    infoServidor = Object.assign({}, escolha, { titulo: null, protocolo: null, detetado: false });
+    if (!escolha.suportada) {
+      log(`${t('version_auto_failed')} ${escolha.motivo}`, 'WARN');
+    }
+    return escolha.versao;
+  }
+
+  let ping = { ok: false, motivo: 'sem tentativa' };
+  try {
+    ping = await deteccao.criarPinger()(config.server.ip, config.server.port);
+  } catch (err) {
+    ping = { ok: false, motivo: err.message };
+  }
+
+  const descrito = deteccao.descreverServidor(ping);
+  const escolha = deteccao.escolherVersao({
+    configurada: 'auto',
+    protocoloServidor: descrito.protocolo,
+    conhecidas
+  });
+
+  if (escolha.suportada) {
+    infoServidor = Object.assign({}, escolha, descrito, { detetado: true });
+    log(`${t('version_auto_detected')} ${escolha.versao}`, 'INFO');
+    return escolha.versao;
+  }
+
+  infoServidor = Object.assign({}, escolha, descrito, { detetado: false, versao: maisRecente });
+  log(
+    `${t('version_auto_failed')} ${escolha.motivo || ping.motivo} ${t('version_auto_fallback')} ${maisRecente}`,
+    'WARN'
+  );
+  return maisRecente;
+}
+
+/** Versão a passar ao Mineflayer: a detectada, se houver, senão a configurada. */
+function versaoParaLigar() {
+  if (infoServidor && infoServidor.versao) return infoServidor.versao;
+  return config.server.version;
+}
+
+/** O comando /diagnostico: o que o bot sabe sobre si e sobre o servidor. */
+function showDiagnostic() {
+  console.log(`${t('diagnostic_header')} ${t('cmd_diagnostic')}`);
+  console.log(`  node: ${process.version}`);
+  console.log(
+    `  ${t('diagnostic_patch')}: ${
+      compatVersao.aplicada ? t('diagnostic_patch_yes') : compatVersao.motivo || '-'
+    }`
+  );
+  console.log(`  ${t('diagnostic_server')}: ${config.server.ip}:${config.server.port}`);
+  console.log(`  ${t('diagnostic_version_config')}: ${config.server.version}`);
+  if (infoServidor) {
+    const origem = infoServidor.detetado ? ` (${t('version_auto_source')})` : '';
+    console.log(`  ${t('diagnostic_version_used')}: ${versaoParaLigar()}${origem}`);
+    if (infoServidor.titulo) console.log(`  ${t('diagnostic_title')}: ${infoServidor.titulo}`);
+    if (infoServidor.protocolo) console.log(`  ${t('diagnostic_protocol')}: ${infoServidor.protocolo}`);
+    if (infoServidor.jogadores !== null && infoServidor.jogadores !== undefined) {
+      console.log(`  ${t('diagnostic_players')}: ${infoServidor.jogadores}/${infoServidor.maxJogadores}`);
+    }
+    if (infoServidor.motivo) console.log(`  ${t('diagnostic_note')}: ${infoServidor.motivo}`);
+  } else {
+    console.log(`  ${t('diagnostic_version_used')}: ${t('diagnostic_not_detected')}`);
+  }
+  const movimentoAtivo = config.movement ? config.movement.enabled : false;
+  console.log(`  ${t('diagnostic_movement')}: ${movimentoAtivo ? t('movement_started') : t('movement_stopped')}`);
+  console.log(`  ${t('diagnostic_sessions')}: ${gerenciador ? gerenciador.tamanho() : 0}`);
+  console.log(
+    `  ${t('diagnostic_reconnect')}: ${RECONNECT.opcoes.maxTentativas}x ${t('diagnostic_until')} ${Math.round(
+      RECONNECT.opcoes.atrasoMaximo / 1000
+    )}s`
+  );
+  if (gerenciador) {
+    for (const s of gerenciador.sessoes) {
+      console.log(`    ${s.nome}: ${s.estado}`);
+    }
+  }
 }
 
 // O servidor manda a razão da expulsão em vários formatos; mostra sempre texto.
@@ -623,6 +724,7 @@ function showHelp() {
   console.log(t('help_command_ram'));
   console.log(t('help_command_andar'));
   console.log(t('help_command_bots'));
+  console.log(t('help_command_diagnostic'));
   console.log(t('help_command_version'));
   console.log(t('help_command_lang'));
   console.log(t('help_command_changetype'));
@@ -641,7 +743,7 @@ const rl = readline.createInterface({
 });
 
 // Antes de criar o bot, verificar servidor e nome
-function init() {
+async function init() {
   RECONNECT.ativar();
   config = configStore.read();
   // O patch das versões é feito antes do Mineflayer carregar; só agora se pode
@@ -661,9 +763,12 @@ function init() {
   ensureBotName();
   if (!config.server.ip) {
     promptServerSetup(createBot);
-  } else {
-    createBot();
+    return;
   }
+  // Detecta a versão antes de ligar, para o /diagnostico ter o que mostrar
+  detectarVersao()
+    .catch((err) => log(D + "{t('version_auto_failed')} " + err.message, 'WARN'))
+    .then(() => createBot());
 }
 
 rl.prompt();
@@ -715,6 +820,10 @@ rl.on('line', (line) => {
       break;
     case 'bots':
       showBots();
+      break;
+    case 'diagnostico':
+    case 'diagnostic':
+      showDiagnostic();
       break;
     case 'version':
       changeVersion(args[0]);

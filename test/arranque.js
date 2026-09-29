@@ -103,6 +103,8 @@ verificar(
   JSON.stringify(configApos)
 )
 verificar('a porta antiga não se perdeu', configApos && configApos.server.port === 25570, JSON.stringify(configApos))
+verificar('o /diagnostico responde', stdout.includes('node:'), stdout.slice(-400))
+verificar('o /diagnostico mostra a versão configurada', stdout.includes('1.20.4'), stdout.slice(-400))
 verificar('o /andar responde e não rebenta', /anti-afk/i.test(stdout), stdout.slice(-400))
 verificar('o /andar com estado inválido mostra a sintaxe', stdout.includes('/andar [on|off]'), stdout.slice(-400))
 verificar('o movimento anti-AFK manda andar', linhaEventos.includes('controlo:forward=true'), linhaEventos)
