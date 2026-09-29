@@ -281,27 +281,40 @@ if (!pkg) {
 
 // ------------------------------------------- 9. testes (npm test)
 {
-  const temTestes = fs.existsSync(path.join(root, 'test', 'testes.js'))
-  if (!temTestes) {
-    nota('aviso', 'testes', 'sem test/testes.js — não há caracterização do comportamento')
-  } else {
+  const pastaTestes = path.join(root, 'test')
+  const ficheiros = fs.existsSync(pastaTestes)
+    ? fs
+        .readdirSync(pastaTestes)
+        .filter((f) => f.endsWith('.js') && f !== 'harness.js')
+        .sort()
+    : []
+
+  if (!ficheiros.length) {
+    nota('aviso', 'testes', 'sem ficheiros de teste em test/ — nada caracteriza o comportamento')
+  }
+
+  let total = 0
+  for (const ficheiro of ficheiros) {
     try {
-      const r = execFileSync(process.execPath, [path.join(root, 'test', 'testes.js')], {
+      const r = execFileSync(process.execPath, [path.join(pastaTestes, ficheiro)], {
         cwd: root,
         encoding: 'utf8',
         stdio: 'pipe',
         timeout: 60000
       })
-      const resumo = (r.match(/(\d+) passaram, (\d+) falharam/) || [])[0] || ''
-      out.ok(`testes: ${resumo || 'sem resumo'}`)
+      const m = r.match(/(\d+) passaram, (\d+) falharam/)
+      total += m ? Number(m[1]) : 0
+      out.ok(`${ficheiro}: ${m ? m[0] : 'sem resumo'}`)
     } catch (err) {
       const saida = `${err.stdout || ''}${err.stderr || ''}`
-      const linhas = saida.split(/\r?\n/).filter((l) => l.includes('FALHA'))
-      for (const l of linhas.slice(0, 6)) nota('erro', 'testes', l.trim())
-      if (!linhas.length) nota('erro', 'testes', 'os testes falharam (ver node test/testes.js)')
+      const maus = saida.split(/\r?\n/).filter((l) => l.includes('FALHA'))
+      for (const l of maus.slice(0, 6)) nota('erro', 'testes', `${ficheiro} — ${l.trim()}`)
+      if (!maus.length) nota('erro', 'testes', `${ficheiro}: os testes falharam (ver npm test)`)
     }
   }
+  if (total) out.ok(`${total} verificações no total`)
 }
+
 
 // ------------------------------------------------------------------- saída
 if (comoJson) {

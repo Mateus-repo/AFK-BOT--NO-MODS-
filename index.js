@@ -1,11 +1,18 @@
-const mineflayer = require('mineflayer');
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const { GoalBlock } = goals;
-const mcDataLib = require('minecraft-data');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { spawn } = require('child_process');
+
+const { instalarVersaoPadrao } = require('./src/versoes');
+
+// Torna conhecida a versão configurada antes de o Mineflayer carregar a
+// biblioteca de versões. Sem isto, o Mineflayer recusa a conta.
+const compatVersao = instalarVersaoPadrao();
+
+const mineflayer = require('mineflayer');
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const { GoalBlock } = goals;
+const mcDataLib = require('minecraft-data');
 
 const { createConfig } = require('./src/config');
 const { createI18n } = require('./src/i18n');
@@ -427,6 +434,13 @@ const rl = readline.createInterface({
 function init() {
   RECONNECT.ativar();
   config = configStore.read();
+  // O patch das versões é feito antes do Mineflayer carregar; só agora se pode
+  // dizer o que aconteceu, já com o log e o idioma prontos.
+  if (compatVersao.aplicada) {
+    log(t('version_patch_applied'), 'INFO');
+  } else if (compatVersao.motivo && !compatVersao.motivo.includes('já conhece')) {
+    log(`${t('version_patch_failed')} ${compatVersao.motivo}`, 'WARN');
+  }
   if (config.language && config.language !== currentLang) {
     currentLang = config.language;
     if (!loadLanguage(currentLang)) {
