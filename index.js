@@ -202,6 +202,7 @@ class BotSession {
     this.currentYaw = 0;
     this.reconnectTimer = null;
     this.connectTimeoutTimer = null;
+    this.spawnTimer = null;
     this.reconnectAttempts = 0;
     this.shouldRun = true;
     this.status = 'disconnected';
@@ -236,6 +237,10 @@ class BotSession {
     if (this.connectTimeoutTimer) {
       clearTimeout(this.connectTimeoutTimer);
       this.connectTimeoutTimer = null;
+    }
+    if (this.spawnTimer) {
+      clearTimeout(this.spawnTimer);
+      this.spawnTimer = null;
     }
     if (this.instance) {
       const oldBot = this.instance;
@@ -319,7 +324,7 @@ class BotSession {
       console.log(`[${this.username}] Sessao iniciada no servidor.`);
     });
 
-    bot.once('spawn', () => {
+    bot.on('spawn', () => {
       if (this.instance !== bot) return;
       this.status = 'spawned';
       this.reconnectAttempts = 0;
@@ -327,8 +332,13 @@ class BotSession {
         clearTimeout(this.connectTimeoutTimer);
         this.connectTimeoutTimer = null;
       }
-      setTimeout(() => {
-        if (this.instance !== bot) return;
+      if (this.spawnTimer) {
+        clearTimeout(this.spawnTimer);
+        this.spawnTimer = null;
+      }
+      this.spawnTimer = setTimeout(() => {
+        this.spawnTimer = null;
+        if (this.instance !== bot || this.status !== 'spawned') return;
         if (bot.entity?.position) {
           this.spawnPosition = bot.entity.position.clone();
           console.log(`[${this.username}] Entrou no mundo nas coordenadas: ${this.formatCoords(this.spawnPosition)}`);
@@ -347,12 +357,19 @@ class BotSession {
     bot.on('death', () => {
       if (this.instance !== bot) return;
       this.stopAfkMovement();
+      this.status = 'dead';
+      if (this.spawnTimer) {
+        clearTimeout(this.spawnTimer);
+        this.spawnTimer = null;
+      }
       console.log(`[${this.username}] O bot morreu. A renascer automaticamente...`);
       setTimeout(() => {
-        if (this.instance !== bot) return;
+        if (this.instance !== bot || this.status !== 'dead') return;
         try {
           bot.respawn();
-        } catch {}
+        } catch (err) {
+          console.log(`[${this.username}] Erro ao renascer: ${err.message}`);
+        }
       }, 1000);
     });
 
@@ -361,6 +378,13 @@ class BotSession {
       if (sender === this.username) return;
       if (message.startsWith('!ping')) {
         bot.chat('pong');
+      }
+    });
+
+    bot.on('messagestr', (message) => {
+      if (this.instance !== bot) return;
+      if (message && message.trim()) {
+        console.log(`[${this.username}] Chat: ${message.trim()}`);
       }
     });
 
