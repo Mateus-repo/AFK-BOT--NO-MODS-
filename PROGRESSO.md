@@ -8,6 +8,7 @@
 - O repositório está limpo: `run.exe`, `nodeMsi/*.msi`, `.idea/`, `logs/`, o `settings.json` antigo e os READMEs HTML/TXT duplicados saíram do índice do git. `old-deprecated-10.1/` só tem ficheiros **não versionados**.
 - `verificar.mjs` está com **0 erros e 3 avisos** (versão `2.1` fora de `X.Y.Z`, `node_modules` por instalar, chaves só do launcher em `en-us.txt`).
 - Criada a camada de agente: `AGENTS.md`, 13 skills em `.opencode/skills/`, 4 scripts em `.opencode/scripts/`, `IDEIAS.md` e `ROADMAP.md`.
+- **Requisitos transversais registados** (2026-09-29): correr em **Windows 7**, funcionar nas **versões mais recentes do Minecraft** e funcionar com **mods de qualquer loader**. Mínimo de Node **14.21.3**, declarado em `package.json` e verificado por `verificar-node.mjs`.
 - **Fase 2 começada**: a configuração passa a ser lida com validação (`configRead`), gravada sem perder campos desconhecidos (`configSave`) e o bot voltou a ligar-se sozinho quando a ligação cai, com recuo exponencial até 60 segundos e limite de 10 tentativas.
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
@@ -33,6 +34,9 @@ Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em 
 - **Chaves do launcher alinhadas** — `error_no_version`, `error_node_fail` e as `msg_*` passaram para os três idiomas; os `lang/*.txt` têm agora as mesmas 69 chaves.
 - **Configuração e reconexão corrigidas, por testar** — `configRead`/`configSave` e a reconexão com recuo exponencial entraram hoje e nunca foram executadas. Se houver erro de sintaxe em runtime, aparece no primeiro arranque.
 - **A reconexão pode ser agressiva** — 10 tentativas com recuo até 60 s dão quase 5 minutos a tentar. Num servidor que recusa a conta, é isso que o utilizador vai ver.
+- **Windows 7 x mods x versões novas não cabem juntos** — o Java 8 é o último que corre em Windows 7, e o Minecraft 1.20.5+ e o Via actual precisam de Java 21. Num PC com Windows 7, o sidecar só deve servir de imediatamente versões mais antigas. **Por confirmar.**
+- **O launcher não está preparado para o Windows 7** — o `run.cpp` instala sempre o Node 22.16.0 de um MSI que não existe no repositório, e o Node 22 não corre em Windows 7. Ideia I-007.
+- **`npm install` com avisos** — 159 pacotes; `@azure/msal-node@1.18.4` declara `engines: 10 || 12 || 14 || 16 || 18` (é aviso, e o 14 está na lista); `lodash.get@4.4.2` marcado como obsoleto (dependência transitiva); `npm audit` aponta 15 vulnerabilidades (8 moderadas, 7 altas) por avaliar.
 - **`express` é dependência declarada e não é usado** (ideia I-003).
 - **`nodeMsi/` não existe** — o `run.cpp` instala o Node a partir de um MSI que não está no repositório (ideia I-006).
 - **`replit.nix` fixa Node 14** — desatualizado para a dependência actual.
@@ -48,9 +52,26 @@ Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em 
 - 2026-09-29 — Nada se mexe na estrutura sem plano aprovado; o `old-deprecated-10.1/` era a única cópia do código.
 - 2026-09-29 — Para servidores com mods: **sidecar local Via** (I-001), e não ViaVersion no servidor. A documentação de ViaVersion no servidor fica como alternativa dentro da mesma fase.
 - 2026-09-29 — `.replit` e `replit.nix` ficam na raiz (o Replit executa `node index.js`, que passou a estar lá), mesmo com o Node 14 a precisar de actualização.
+- 2026-09-29 — O projecto tem de correr em **Windows 7**, funcionar nas **versões mais recentes do Minecraft** e funcionar com **mods de qualquer loader**. Daí o mínimo de Node 14.21.3 e a verificação automática de compatibilidade.
 
 ## Diário de sessões
 
+
+### 2026-09-29 (terceira sessão)
+
+**Feito — compatibilidade com o Node mínimo**
+- `npm install` corrido pelo utilizador com Node 22: 159 pacotes, 13 segundos. Avisos anotados em *Problemas conhecidos*.
+- `package.json` passou a declarar `"engines": { "node": ">=14.21.3" }` — a última série do Node que corre em Windows 7.
+- Novo script `.opencode/scripts/verificar-node.mjs`: analis os `engines.node` das dependências instaladas e compila cada ficheiro do projecto com o Node mínimo (via `npx node@X.Y.Z --check`). Sem rede, salta a parte da sintaxe com aviso em vez de falhar.
+- `verificar.mjs` ganhou o bloco 8, que chama o anterior em modo rápido (sem rede).
+- Estado real: **nenhuma das 156 dependências exige mais do que Node 14.21.3**, e os 6 ficheiros do projecto compilam com o Node 14.21.3. **Isto não prova que o bot corra** — falta correr.
+
+**Registado**
+- Requisitos transversais R1 (Windows 7), R2 (versões recentes do Minecraft) e R3 (mods de qualquer loader) no `ROADMAP.md`, com o aviso de que o Java 8 é o último para Windows 7 e não chega para o Via actual nem para o Minecraft 1.20.5+.
+
+**Por fazer**
+- Correr o bot com o Node 14.21.3 de facto (`npx -y node@14.21.3 index.js` não chega: liga-se a servidores reais).
+- Launcher que instale o Node certo conforme o Windows (ideia I-007).
 
 ### 2026-09-29 (segunda sessão)
 

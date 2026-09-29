@@ -16,7 +16,8 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 6. **Segredos nunca entram no git.** `settings.json`, `launcher_accounts.json`, `logs/` e contas do launcher ficam de fora (verificação automática: `.opencode/scripts/check-secrets.mjs`).
 7. **Verifica antes de guardar.** `node .opencode/scripts/verificar.mjs` tem de estar sem erros antes de um commit.
 8. **Pequeno e reversível.** Mudanças pequenas, um motivo por commit. Nada de refactor "de passagem".
-9. **Commitar e fazer push sem perguntar.** O dono do projecto deu autorização permanente (2026-09-29): assim que uma tarefa estiver verificada e coerente, faz-se o commit atómico e o `push` para o branch de trabalho, sem pedir confirmação. A protecção é o método — alterações pequenas, um motivo por commit, `verificar.mjs` limpo, segredos bloqueados, nunca `--force` e nunca directo para `main`.
+9. **Node mínimo 14.21.3** — o projecto tem de correr em Windows 7, e o Node 14 é a última série que lá corre. Nada de sintaxe nem de dependência que só exista a partir do Node 16 sem dizer isso primeiro. `node .opencode/scripts/verificar-node.mjs` trata disso.
+10. **Commitar e fazer push sem perguntar.** O dono do projecto deu autorização permanente (2026-09-29): assim que uma tarefa estiver verificada e coerente, faz-se o commit atómico e o `push` para o branch de trabalho, sem pedir confirmação. A protecção é o método — alterações pequenas, um motivo por commit, `verificar.mjs` limpo, segredos bloqueados, nunca `--force` e nunca directo para `main`.
 
 ---
 
@@ -109,6 +110,7 @@ node .opencode/scripts/verificar.mjs        # tudo (0 = sem erros, 1 = com erros
 node .opencode/scripts/verificar.mjs --rapido
 node .opencode/scripts/check-secrets.mjs    # segredos (também: --staged, --files, --json)
 node .opencode/scripts/lang-keys.mjs        # chaves de idioma (também: --falta, --json)
+node .opencode/scripts/verificar-node.mjs    # compatibilidade com o Node mínimo (também: --rapido, --json)
 ```
 
 Os caminhos nos comandos das skills são **relativos à raiz do repositório**.
@@ -137,4 +139,6 @@ Os caminhos nos comandos das skills são **relativos à raiz do repositório**.
 - `old-deprecated-10.1/` ficou só com ficheiros **não versionados** (binários, logs, `.idea/`, um `settings.json` com dados reais de um servidor antigo). Podem ser apagados, mas só com aprovação da skill `organizar-projeto`.
 - O launcher `run.cpp` espera uma pasta `nodeMsi/` que **não existe** no repositório; compilar tal como está não chega para um utilizador novo (ideia I-006).
 - `replit.nix` fixa `pkgs.nodejs-14_x`: desatualizado, e o `express` declarado no `package.json` não é usado em lado nenhum.
-- `eng.txt` e `pt-pt.txt` não têm as chaves do launcher que `en-us.txt` tem — ver skill `traducoes`.
+- **Requisitos transversais**: correr em Windows 7, funcionar nas versões mais recentes do Minecraft e funcionar com mods de qualquer loader. Estão no `ROADMAP.md` (R1, R2, R3). Nenhuma alteração pode quebrá-los sem o utilizador decidir.
+- **Windows 7 e mods**: o Java 8 é o último que corre em Windows 7, e o Via actual e o Minecraft 1.20.5+ precisam de Java 21. Não prometas as duas coisas ao mesmo tempo.
+- Os três `lang/*.txt` têm as mesmas 69 chaves; o `run.cpp` escolhe o idioma a partir de `settings.json`.

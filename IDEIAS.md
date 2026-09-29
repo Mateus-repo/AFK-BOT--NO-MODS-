@@ -1,5 +1,14 @@
 ## 💡 Novas
 
+### I-007 · Instalar o Node certo conforme o Windows
+
+- Estado: 💡 Nova · Registada: 2026-09-29
+- O quê: o `run.cpp` (ou um script novo) detecta a versão do Windows e instala o Node 14.21.3 no Windows 7 e o Node actual no Windows 10/11, em vez de instalar sempre o Node 22, que não corre no 7.
+- Porquê: requisito R1. Hoje o launcher nem sequer tem o MSI de que precisa, e mesmo com ele não funcionaria em Windows 7.
+- Esforço: M · Impacto: alto
+- Toca em: `run.cpp`, READMEs, `package.json`
+- Notas: o MSI tem de ser descarregado de uma URL por plataforma (ou instalado a partir do `npx node@X`, que dá um Node portátil sem instalador — mais simples e sem privilégios de administrador). Ideia ligada a I-006.
+
 ### I-002 · Vários bots, um por servidor
 
 - Estado: 💡 Nova · Registada: 2026-09-29
@@ -61,6 +70,7 @@ _(nada)_
 - Toca em: `index.js` (camada de ligação), `default.json` (nova secção `modded`), `lang/*.txt`, `docs/modded.md`
 - Riscos: exige Java instalado; cerca de 100 MB de jars que **não** podem ser versionados; arranque mais lento; a licença dos jars obriga a não os redistribuir.
 - Notas: o utilizador escolheu este caminho em 2026-09-29 porque não depende do dono do servidor. A documentação de ViaVersion no servidor fica como alternativa, dentro da mesma fase do roadmap.
+- Conflito a resolver: em **Windows 7** só há Java 8, e o Via actual e o Minecraft 1.20.5+ precisam de Java 21. Ou se aceita que o Windows 7 fique só para servidores vanilla antigos, ou se procura um Via antigo que funcione com Java 8, ou se abandona o Java no Windows 7. **Por decidir com o utilizador.**
 - Decisão: implementa-se na Fase 4 do `ROADMAP.md`. Desenho em `docs/modded.md`.
 
 ## ⏸️ Adiadas

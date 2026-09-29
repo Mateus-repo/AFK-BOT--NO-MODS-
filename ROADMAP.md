@@ -6,6 +6,18 @@ Um bot AFK que **entra em quantos mais servidores possível** — incluindo serv
 
 Objectivo de longo prazo (utilizador): *o bot tem de conseguir entrar em qualquer servidor, mesmo com mods.*
 
+## Requisitos transversais (não negociáveis)
+
+Registados a 2026-09-29 pelo dono do projecto. **Nenhuma fase pode quebrar isto** — qualquer alteração que obrigue a subir o mínimo de Node, o Windows mínimo ou a versão de Java tem de dizer isso antes de ser feita.
+
+| # | Requisito | Como se garante |
+|---|---|---|
+| R1 | Correr em **Windows 7** (e Windows 10/11) | mínimo de Node **14.21.3** declarado em `package.json` (`engines.node`) e verificado por `verificar-node.mjs`; o launcher tem de instalar o Node certo conforme o Windows |
+| R2 | Funcionar nas **versões mais recentes do Minecraft** | matriz de versões testada e documentada; nada de fixar a versão no código |
+| R3 | Funcionar com **mods de qualquer loader** (Forge, Fabric, NeoForge) | Fase 4 (sidecar local Via) + `docs/modded.md`; "por testar" é escrito até haver teste |
+
+Mínimo de Node em uso: **14.21.3** (última série do Node com suporte a Windows 7; o Node 16 já não corre lá). Estado verificado em 2026-09-29: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros do projecto compilam com o Node 14.21.3. **Isto não substitui correr o bot com esse Node.**
+
 ---
 
 ## Fase 1 · Restaurar a base na raiz · estado: **feito em 2026-09-29** · dona: `organizar-projeto`
@@ -37,11 +49,13 @@ Objectivo de longo prazo (utilizador): *o bot tem de conseguir entrar em qualque
 
 ## Fase 4 · Compatibilidade com mods · estado: **decidido (sidecar local Via), por implementar** · dona: `modded`
 
+> Conflito conhecido com R1: o Java necessário para o Via e para o Minecraft 1.20.5+ é o Java 21, e o **Java 8 é o último que corre em Windows 7**. Num PC com Windows 7, o sidecar pode só conseguir falar com servidores de versões mais antigas. **Por confirmar** — ver `IDEIAS.md` (I-001) e `docs/modded.md`.
+
 - **Objectivo**: entrar em servidores Forge/Fabric/NeoForge, ou explicar com precisão porque que não é possível e o que o utilizador pode fazer.
 - **Inclui**: o sidecar local Via, decidido pelo utilizador em 2026-09-29 (ideia I-001): um processo Java em `localhost` converte o protocolo e o bot liga-se a esse proxy. Continua a fazer parte desta fase: documentar ViaVersion no servidor como o caminho mais simples, para quem não queira instalar nada; mensagens de diagnóstico; secção `docs/modded.md`; resumo nos READMEs. O desenho está em `docs/modded.md`.
 - **Fora**: substituir o Mineflayer; mods que o cliente precise mesmo de processar (blocos, itens e MEC customizados não são necessários para um bot AFK, mas isso **tem de ser confirmado**).
 - **Pronto quando**: existe um caminho escolhido e registado como decisão, e um servidor modded de teste onde o bot entre (ou, no caminho (a), documentação com instruções testadas por outra pessoa).
-- **Riscos**: exige Java no computador do utilizador; o sidecar ocupa cerca de 100 MB; a licença dos jars do Via obriga a não os redistribuir no repositório; alguns servidores expulsam bots por anti-cheat — isso não é um problema de protocolo; nada disto foi testado com um servidor modded real.
+- **Riscos**: exige Java no computador do utilizador; **em Windows 7 o Java disponível é o 8, que não serve para o Via actual nem para o Minecraft 1.20.5+** (R1 × R2 × R3 não cabem juntos nesse caso); o sidecar ocupa cerca de 100 MB; a licença dos jars do Via obriga a não os redistribuir no repositório; alguns servidores expulsam bots por anti-cheat — isso não é um problema de protocolo; nada disto foi testado com um servidor modded real.
 
 ## Fase 5 · Qualidade e lançamento da 3.0 · estado: **por fazer** · dona: `commit` + `lancar-versao` + `documentacao`
 
@@ -59,6 +73,7 @@ Objectivo de longo prazo (utilizador): *o bot tem de conseguir entrar em qualque
 - **2026-09-29** — A compatibilidade com mods é uma fase própria, não um extra. Motivo: é o objectivo declarado do projecto e tem arquitectura diferente do resto.
 - **2026-09-29** — Restaurar o código para a raiz antes de melhorar seja o que for. Motivo: nada pode ser testado com o código arquivado.
 - **2026-09-29** — Um comando novo implica sempre três alterações (idioma, código, README). Motivo: comando sem texto traduzido ou sem documentar é dívida.
+- **2026-09-29** — Mínimo de Node fixado em **14.21.3** (R1), declarado no `package.json` e verificado automaticamente. Motivo: o Node 14 é a última série que corre em Windows 7, e subir o mínimo fecha a porta a uma parte dos utilizadores.
 - **2026-09-29** — O roadmap só aponta para o `PROGRESSO.md` e para o `IDEIAS.md`; nunca duplica tarefas. Motivo: dois sítios com a mesma lista divergem.
 - **2026-09-29** — Para servidores com mods ficamos com o **sidecar local Via** (ideia I-001), e não com a documentação de ViaVersion no servidor. Motivo: o utilizador escolheu a opção que não depende do dono do servidor. A documentação de ViaVersion no servidor fica como alternativa a explicar.
 - **2026-09-29** — Nada entra no repositório depois de um commit sem passar por `verificar.mjs`. Motivo: o verificador apanhou duas chaves de idioma em falta e um falso positivo do detector de segredos no caminho — sem ele, iam para o remoto.

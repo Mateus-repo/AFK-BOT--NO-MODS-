@@ -3,6 +3,15 @@
 > Documento da skill `modded`. Estado: **caminho decidido, nada disto foi implementado nem testado**.
 > Última actualização: 2026-09-29. O que não foi confirmado está marcado como *por confirmar*.
 
+## Aviso: Windows 7 e mods não cabem juntos (por confirmar)
+
+O requisito R1 (Windows 7) e o requisito R3 (mods de qualquer loader) **chocam**:
+
+- O Java 8 é a última versão que corre em Windows 7.
+- O Via actual e o Minecraft 1.20.5+ precisam de Java 17 ou 21.
+
+Ou seja: num PC com Windows 7, o sidecar só deve conseguir falar com servidores de versões mais antigas, e possivelmente com um Via antigo que funcione em Java 8 — o que, por si só, provavelmente não suporta os负载ers modernos. Isto está **por confirmar** com um teste real, e a decisão (aceitar a limitação, procurar um caminho em Java 8, ou dizer que o Windows 7 é só para vanilla antigo) é do dono do projecto.
+
 ## Decisão
 
 Em 2026-09-29 o utilizador escolheu o **caminho 2, sidecar local Via** (ideia I-001 aprovada). O caminho 1, ViaVersion no servidor, continua a ser documentado como a alternativa mais simples para quem não queira instalar Java.
