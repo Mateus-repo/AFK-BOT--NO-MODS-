@@ -8,21 +8,20 @@
 - O repositório está limpo: `run.exe`, `nodeMsi/*.msi`, `.idea/`, `logs/`, o `settings.json` antigo e os READMEs HTML/TXT duplicados saíram do índice do git. `old-deprecated-10.1/` só tem ficheiros **não versionados**.
 - `verificar.mjs` está com **0 erros e 3 avisos** (versão `2.1` fora de `X.Y.Z`, `node_modules` por instalar, chaves só do launcher em `en-us.txt`).
 - Criada a camada de agente: `AGENTS.md`, 13 skills em `.opencode/skills/`, 4 scripts em `.opencode/scripts/`, `IDEIAS.md` e `ROADMAP.md`.
+- **Fase 2 começada**: a configuração passa a ser lida com validação (`configRead`), gravada sem perder campos desconhecidos (`configSave`) e o bot voltou a ligar-se sozinho quando a ligação cai, com recuo exponencial até 60 segundos e limite de 10 tentativas.
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
 ## Em curso
 
-Nada a meio. A Fase 1 está fechada; as alterações estão **stageadas no git mas ainda não commitadas**.
+Fase 2 a meio: configuração e reconexão feitas, separação do `index.js` em módulos ainda por fazer.
 
 ## Próximos passos
 
-- [ ] Commit da Fase 1 (código movido, limpeza, correcções de idioma, READMEs, skills e scripts) — `commit`
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
-- [ ] (Fase 2) Validação do `settings.json` ao arrancar + reescrita que preserve campos desconhecidos
-- [ ] (Fase 2) Reconexão automática com recuo exponencial e limite de tentativas
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
-- [ ] (Fase 2) Passar as chaves do launcher de `en-us.txt` para os outros dois idiomas
+- [ ] (Fase 2) **Testar a configuração e a reconexão a correr** (é o que falta para a fase estar fechada)
+- [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
 - [ ] (Fase 2) `replit.nix`: trocar `nodejs-14_x` por uma versão suportada
 - [ ] (Fase 3) `"version": "auto"` com detecção da versão do servidor e comando `/diagnostico`
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
@@ -31,9 +30,9 @@ Nada a meio. A Fase 1 está fechada; as alterações estão **stageadas no git m
 ## Problemas conhecidos
 
 - **Nada foi testado a correr.** O `index.js` restaurado é o mesmo da v2.1 e não foi executado uma única vez nesta sessão. Antes de confiar em qualquer coisa, `npm install` e um teste num servidor de testes.
-- **Chaves do launcher só em `en-us.txt`** — `error_no_version`, `error_node_fail`, `msg_node_install`, `msg_reopen`, `msg_npm_install`, `msg_npm_fix`, `msg_npm_done`. O `run.cpp` escolhe o idioma a partir de `settings.json`, por isso quem usar `pt-pt` ou `eng` vê as chaves cruas.
-- **Configuração reescrita às cegas** — `changeServer()`, `changeName()`, `changeVersion()` e `changeLanguage()` fazem `writeFileSync` do objecto inteiro; qualquer campo acrescentado por outra via desaparece. Corrigido na Fase 2.
-- **Sem reconexão** — depois de "Conexão encerrada" o processo fica parado.
+- **Chaves do launcher alinhadas** — `error_no_version`, `error_node_fail` e as `msg_*` passaram para os três idiomas; os `lang/*.txt` têm agora as mesmas 69 chaves.
+- **Configuração e reconexão corrigidas, por testar** — `configRead`/`configSave` e a reconexão com recuo exponencial entraram hoje e nunca foram executadas. Se houver erro de sintaxe em runtime, aparece no primeiro arranque.
+- **A reconexão pode ser agressiva** — 10 tentativas com recuo até 60 s dão quase 5 minutos a tentar. Num servidor que recusa a conta, é isso que o utilizador vai ver.
 - **`express` é dependência declarada e não é usado** (ideia I-003).
 - **`nodeMsi/` não existe** — o `run.cpp` instala o Node a partir de um MSI que não está no repositório (ideia I-006).
 - **`replit.nix` fixa Node 14** — desatualizado para a dependência actual.
@@ -51,6 +50,25 @@ Nada a meio. A Fase 1 está fechada; as alterações estão **stageadas no git m
 - 2026-09-29 — `.replit` e `replit.nix` ficam na raiz (o Replit executa `node index.js`, que passou a estar lá), mesmo com o Node 14 a precisar de actualização.
 
 ## Diário de sessões
+
+
+### 2026-09-29 (segunda sessão)
+
+**Feito — Fase 2, primeira parte**
+- `index.js`: `require(configPath)` trocado por `configRead()`, que valida tipos, completa o que falta com o `default.json` e avisa em vez de rebentar; `configSave()` faz merge profundo, pelo que escrever uma opção já não apaga campos desconhecidos.
+- `index.js`: reconexão automática com recuo exponencial (1s, 2s, 4s… até 60s, 10 tentativas), desligada quando a mudança foi deliberada (`/changeserver`, `/changename`, `/version`, `/stop`).
+- `index.js`: a razão de expulsão deixou de aparecer como `[object Object]`.
+- `/default` agora guarda um `settings.json.bak` antes de substituir.
+- `lang/*.txt`: 6 chaves novas (config e reconexão) nos três idiomas, e as 7 chaves do launcher alinhadas — os três ficheiros ficaram com as mesmas 69 chaves.
+- `.gitignore`: `*.bak`.
+- Regras: commit e push automáticos após `verificar.mjs` sem erros, e `verificar.mjs` passou a ver ficheiros de dados a qualquer profundidade.
+
+**Por fazer**
+- Testar a correr: é a parte que falta para fechar a Fase 2.
+- Separar o `index.js` em módulos.
+
+**Notas**
+- As mensagens de configuração são impressas em inglês mesmo quando o idioma configurado é outro, porque a configuração é lida antes de o idioma ser carregado. Débido menor.
 
 ### 2026-09-29
 

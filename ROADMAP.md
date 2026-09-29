@@ -16,7 +16,10 @@ Objectivo de longo prazo (utilizador): *o bot tem de conseguir entrar em qualque
 - **Pronto quando**: `node .opencode/scripts/verificar.mjs` sem erros · `node .opencode/scripts/lang-keys.mjs` diz OK · `npm install` completa · os READMEs listam os comandos que existem em `index.js` · `old-deprecated-10.1/` só com o que foi decidido ficar.
 - **Riscos**: `old-deprecated-10.1/` é a **única cópia** do código actual. Mitigação: `git mv` (reversível), nunca `mv`; nenhum `rm` sem aprovação; confirmar o histórico antes de apagar qualquer coisa.
 
-## Fase 2 · Blindar o núcleo · estado: **por fazer** · dona: código (a dividir entre `modded` para a ligação e as restantes para o resto)
+## Fase 2 · Blindar o núcleo · estado: **em curso** · dona: código (a dividir entre `modded` para a ligação e as restantes para o resto)
+
+> Feito em 2026-09-29: leitura validada da configuração (`configRead`), escrita que preserva campos desconhecidos (`configSave`) com cópia `.bak` no `/default`, reconexão automática com recuo exponencial (1s a 60s, 10 tentativas) e diagnóstico da razão de expulsão.
+> Falta: separar o `index.js` em módulos, `replit.nix` com Node actualizado, e **testar tudo a correr** — nenhuma linha disto foi executada.
 
 - **Objectivo**: o bot não perde configuração, não rebenta com ficheiros inválidos e volta sozinho quando a ligação cai.
 - **Inclui**: validação e valores por omissão ao ler `settings.json`; reescrita do ficheiro que **preserve campos desconhecidos** (hoje `changeServer()` regrava o ficheiro inteiro); reconexão automática com recuo exponencial e limite de tentativas; diagnóstico nos eventos `kicked` e `end`; separação do `index.js` monolítico em módulos pequenos (configuração, idiomas, log, ligação, comandos) — só depois da Fase 1 estar verde.

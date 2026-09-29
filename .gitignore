@@ -6,6 +6,9 @@ jspm_packages/
 settings.json
 launcher_accounts.json
 
+# Cópias de segurança da configuração
+*.bak
+
 # Logs de execução (contêm servidores reais)
 logs/
 
