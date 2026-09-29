@@ -54,6 +54,7 @@ Crie (ou edite) o arquivo `settings.json` com o seguinte conteúdo básico e aju
 Os arquivos de idioma ficam na pasta `lang/`:
 - `lang/pt-pt.txt` – Português
 - `lang/eng.txt` – Inglês
+- `lang/en-us.txt` – Inglês (EUA), com as mensagens extra do launcher  
 
 Cada linha segue o formato `chave=valor`. Para adicionar frases ou ajustar traduções, basta editar o arquivo correspondente.
 
@@ -119,6 +120,10 @@ Todos os comandos devem ser prefixados com `/` no terminal em que o bot estiver 
 ### /help
 - **Descrição**: Exibe todos os comandos disponíveis
 - **Sintaxe**: `/help`
+
+### /default
+- **Descrição:** Repõe o `settings.json` a partir do `default.json` e reinicia o bot  
+- **Sintaxe:** `/default`
 
 ## Executor em C++
 O arquivo `run.cpp` executa `index.js` usando o Node.js. Para compilar e usar:

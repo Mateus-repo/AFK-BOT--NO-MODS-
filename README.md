@@ -54,6 +54,7 @@ Create (or edit) the `settings.json` file with the following basic content and a
 Language files are located in the `lang/` folder:
 - `lang/pt-pt.txt` – Portuguese  
 - `lang/eng.txt` – English  
+- `lang/en-us.txt` – English (US), with the extra launcher messages  
 
 Each line follows the format `key=value`. To add phrases or adjust translations, simply edit the corresponding file.
 
@@ -119,6 +120,10 @@ All commands must be prefixed with `/` in the terminal where the bot is running:
 ### `/help`
 - **Description:** Displays all available commands  
 - **Syntax:** `/help`
+
+### `/default`
+- **Description:** Restores `settings.json` from `default.json` and restarts the bot  
+- **Syntax:** `/default`
 
 ## C++ Launcher
 The `run.cpp` file runs `index.js` using Node.js. To compile and use:
