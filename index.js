@@ -19,6 +19,7 @@ const { createI18n } = require('./src/i18n');
 const { createLog } = require('./src/log');
 const { createReconnect } = require('./src/reconnect');
 const { criarMovimento } = require('./src/movimento');
+const { gerarNome, normalizarBots, criarGerenciador } = require('./src/sessoes');
 
 const configPath = path.join(__dirname, 'settings.json');
 const defaultConfigPath = path.join(__dirname, 'default.json');
@@ -49,7 +50,10 @@ const RECONNECT = createReconnect({
   aoTentar: () => createBot()
 });
 
-let bot;
+// O gerenciador de sessões. `bot` continua a ser a sessão principal, para
+// que os comandos antigos (/pos, /ping, /chat) não mudem de comportamento.
+let bot = null;
+let gerenciador = null;
 let currentLang = 'eng';
 let movimento = null;
 
@@ -204,6 +208,124 @@ function createBot() {
   });
 }
 
+/**
+ * Cria uma sessão: uma instância do Mineflayer, com o seu movimento e a sua
+ * reconexão. Uma sessão caída não afecta as outras.
+ */
+function criarSessao(configBot) {
+  const nome = gerarNome(configBot.username);
+  const reconexao = createReconnect({
+    log,
+    t,
+    aoTentar: () => {
+      s.nome = gerarNome(configBot.username);
+      s.ligar();
+    }
+  });
+  const movimentoSessao = { instancia: null };
+
+  const s = {
+    nome,
+    estado: 'desligado',
+    bot: null,
+    ligar() {
+      reconexao.clear();
+      reconexao.ativar();
+      const authMethod = configBot.type === 'microsoft' ? 'microsoft' : 'mojang';
+      s.estado = 'a_ligar';
+      s.bot = mineflayer.createBot({
+        host: config.server.ip,
+        port: config.server.port,
+        version: config.server.version,
+        username: s.nome,
+        password: authMethod === 'microsoft' ? configBot.password || undefined : undefined,
+        auth: authMethod
+      });
+      s.bot.once('login', () => {
+        s.estado = 'ligada';
+        log(`${t('login_success')} [${s.nome}]`);
+      });
+      s.bot.once('spawn', () => {
+        s.estado = 'no_mundo';
+        reconexao.reset();
+        log(`${t('bot_has_arrived')} [${s.nome}]`);
+        if (s.bot.entity && s.bot.entity.position) {
+          movimentoSessao.instancia = criarMovimento({ bot: s.bot, config: config.movement, log, t });
+          if (!movimentoSessao.instancia.iniciar(s.bot.entity.position)) {
+            log(t('movement_disabled_in_config'), 'INFO');
+          }
+        }
+      });
+      s.bot.on('kicked', (reason) => {
+        s.estado = 'expulso';
+        log(`${t('kicked_reason')} ${formatReason(reason)} [${s.nome}]`, 'WARN');
+      });
+      s.bot.on('error', (err) => {
+        log(`${t('error_generic')} ${err} [${s.nome}]`, 'ERROR');
+      });
+      s.bot.on('end', () => {
+        s.estado = 'desligado';
+        log(`${t('connection_closed')} [${s.nome}]`, 'WARN');
+        if (movimentoSessao.instancia) {
+          movimentoSessao.instancia.parar();
+          movimentoSessao.instancia = null;
+        }
+        reconexao.agendar(t('connection_closed'));
+      });
+      return s;
+    },
+    parar() {
+      s.estado = 'parado';
+      reconexao.desativar();
+      if (movimentoSessao.instancia) {
+        movimentoSessao.instancia.parar();
+        movimentoSessao.instancia = null;
+      }
+      if (s.bot) {
+        try {
+          s.bot.removeAllListeners('end');
+          s.bot.quit('A parar');
+        } catch {
+          // o bot pode já estar desligado
+        }
+      }
+    },
+    movimento: () => movimentoSessao.instancia
+  };
+  return s;
+}
+
+/** Liga todas as sessões da configuração. */
+function createBot() {
+  RECONNECT.clear();
+  const bots = normalizarBots(config);
+  gerenciador = criarGerenciador({
+    criarSessao,
+    log,
+    t
+  });
+  for (const b of bots) gerenciador.adicionar(b);
+  const quantas = gerenciador.ligarTodas();
+  bot = gerenciador.sessoes.length ? gerenciador.sessoes[0].bot : null;
+  if (quantas > 1) {
+    log(`${t('bots_started')} ${quantas}`, 'INFO');
+  }
+  return quantas;
+}
+
+/**
+ * Reinicia a ligação. `indice` diz quantas sessões recomeçam: ao mudar o
+ * servidor ou o nome, as que já mudaram não devem voltar a ligar.
+ */
+function reiniciarSessoes(indice) {
+  if (gerenciador) {
+    for (const s of gerenciador.abaixo(indice === undefined ? gerenciador.tamanho() : indice)) {
+      s.parar();
+    }
+  }
+  createBot();
+}
+
 // O servidor manda a razão da expulsão em vários formatos; mostra sempre texto.
 function formatReason(reason) {
   if (typeof reason === 'string') return reason;
@@ -241,6 +363,28 @@ function desligarMovimento() {
   }
 }
 
+/**
+ * Mostra o estado de cada sessão: nome, situação e posição.
+ */
+function showBots() {
+  if (!gerenciador || !gerenciador.tamanho()) {
+    console.log(t('bots_none'));
+    return;
+  }
+  console.log(`${t('bots_started')} ${gerenciador.tamanho()}`);
+  for (const s of gerenciador.sessoes) {
+    const pos = s.bot && s.bot.entity && s.bot.entity.position
+      ? ` (${formatCoords(s.bot.entity.position)})`
+      : '';
+    console.log(`  ${s.nome}: ${s.estado}${pos}`);
+  }
+}
+
+function formatCoords(pos) {
+  if (!pos) return '';
+  return `X: ${pos.x.toFixed(1)}, Y: ${pos.y.toFixed(1)}, Z: ${pos.z.toFixed(1)}`;
+}
+
 // Comandos auxiliares
 function showServer() {
   console.log(`${t('cmd_server')} ${config.server.ip}:${config.server.port} (v${config.server.version})`);
@@ -260,8 +404,8 @@ function changeServer(newServer) {
     });
     console.log(`${t('cmd_changeserver')} ${config.server.ip}:${config.server.port}`);
     RECONNECT.desativar();
-    if (bot) bot.quit('Server changed');
-    createBot();
+    // Todas as sessões reiniciam com a nova configuração
+    reiniciarSessoes();
   } catch (err) {
     console.log(`${t('error_generic')} ${err}`);
   }
@@ -276,8 +420,8 @@ function changeName(newName) {
     config = configStore.save({ 'bot-account': { username: newName } });
     console.log(`${t('cmd_changename')} ${newName}`);
     RECONNECT.desativar();
-    if (bot) bot.quit('Name changed');
-    createBot();
+    // Todas as sessões reiniciam com a nova configuração
+    reiniciarSessoes();
   } catch (err) {
     console.log(`${t('error_generic')} ${err}`);
   }
@@ -326,8 +470,8 @@ function changeVersion(newVersion) {
     config = configStore.save({ server: { version: newVersion } });
     console.log(`${t('cmd_version')} ${newVersion}`);
     RECONNECT.desativar();
-    if (bot) bot.quit('Version changed');
-    createBot();
+    // Todas as sessões reiniciam com a nova configuração
+    reiniciarSessoes();
   } catch (err) {
     console.log(`${t('error_generic')} ${err}`);
   }
@@ -354,6 +498,8 @@ function stopBot() {
   // Uma paragem propositada não deve ligar-se outra vez
   RECONNECT.desativar();
   desligarMovimento();
+  if (gerenciador) gerenciador.pararTodas();
+  if (gerenciador) gerenciador.pararTodas();
   if (bot) bot.quit('Shutting down');
   process.exit(0);
 }
@@ -476,6 +622,7 @@ function showHelp() {
   console.log(t('help_command_ping'));
   console.log(t('help_command_ram'));
   console.log(t('help_command_andar'));
+  console.log(t('help_command_bots'));
   console.log(t('help_command_version'));
   console.log(t('help_command_lang'));
   console.log(t('help_command_changetype'));
@@ -565,6 +712,9 @@ rl.on('line', (line) => {
       break;
     case 'andar':
       changeMovement(args[0]);
+      break;
+    case 'bots':
+      showBots();
       break;
     case 'version':
       changeVersion(args[0]);

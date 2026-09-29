@@ -4,7 +4,7 @@
   "description": "Afk bot for minecraft servers.",
   "main": "index.js",
   "scripts": {
-    "test": "node test/testes.js && node test/versoes.js && node test/movimento.js && node test/arranque.js",
+    "test": "node test/testes.js && node test/versoes.js && node test/movimento.js && node test/sessoes.js && node test/arranque.js && node test/multibot.js",
     "verificar": "node .opencode/scripts/verificar.mjs"
   },
   "author": "Lamgerr",

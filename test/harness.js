@@ -83,6 +83,12 @@ Module._load = function (pedido, pai, semCache) {
 process.stdout.write = process.stdout.write.bind(process.stdout)
 
 // ---- Arranca o bot --------------------------------------------------------
+// AFK_TEST_SETTINGS aponta para outro settings.json (usado pelo teste multi-bot)
+if (process.env.AFK_TEST_SETTINGS) {
+  const destino = require('path').join(__dirname, 'settings.json')
+  require('fs').copyFileSync(process.env.AFK_TEST_SETTINGS, destino)
+}
+
 require('../index.js')
 
 // Dá tempo ao init() e ao createBot()
@@ -98,7 +104,7 @@ setTimeout(() => {
   // Comandos que não devem rebentar
   const comandos = [
     '/server', '/typeinfo', '/ping', '/pos', '/help', '/comando-que-nao-existe',
-    '/version', '/lang', '/andar', '/andar on', '/andar nope', '/andar off'
+    '/version', '/lang', '/andar', '/andar on', '/andar nope', '/bots', '/andar off'
   ];
   for (const linha of comandos) {
     handlerDeLinha(linha);
