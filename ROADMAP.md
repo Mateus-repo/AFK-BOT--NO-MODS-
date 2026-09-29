@@ -46,10 +46,13 @@ Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com sup
 - **Pronto quando**: derrubar a ligação leva o bot a voltar sozinho com recuo visível no log · um `settings.json` incompleto ou inválido não trava o arranque (cai no `default.json` e avisa) · o `verificar.mjs` sem erros.
 - **Riscos**: a reescrita de `settings.json` toca em quem já usa o bot → se o formato mudar, é MAJOR (skill `lancar-versao`).
 
-## Fase 3 · Detectar a versão e falhar bem · estado: **por fazer** · dona: `modded`
+## Fase 3 · Detectar a versão e falhar bem · estado: **em curso** · dona: `modded`
+
+> **Feito em 2026-09-29:** `src/deteccao.js` faz o pedido de estado num socket normal (sem dependências), escolhe a versão da biblioteca cujo protocolo bate certo, cai na mais recente se o servidor não responder, e o comando `/diagnostico` mostra tudo o que o bot sabe. 23 testes, sem rede.
+> **Falta:** testar a detecção contra servidores reais de versões diferentes — é o que fecha a fase.
 
 - **Objectivo**: entrar em servidores vanilla de várias versões sem configuração, e dizer com clareza porque é que não entrou.
-- **Inclui**: `"version": "auto"` no `settings.json`, com detecção da versão do servidor antes de ligar; `minecraft-data` declarado no `package.json` e usado para mapear versões (hoje é dependência sem uso); mensagem clara quando o servidor usa ViaVersion/ViaFabric; tradução dos erros de protocolo mais comuns para os `lang/*.txt`; comando `/diagnostico` que imprime versão, atraso, autenticação e último erro.
+- **Inclui**: `"version": "auto"` no `settings.json`, com detecção da versão do servidor antes de ligar (feito); mensagem clara quando o servidor usa ViaVersion/ViaFabric (falta); tradução dos erros de protocolo mais comuns para os `lang/*.txt` (falta); comando `/diagnostico` (feito, falta juntar o atraso e a autenticação).
 - **Fora**: servidores modded (é a Fase 4) e plugins com pacotes customizados não suportados.
 - **Pronto quando**: `/changeserver ip:porta` sem versão entra num 1.8, 1.12, 1.16, 1.20 e 1.21 de teste · o `/diagnostico` identifica a versão real do servidor · nenhuma mensagem de erro contém texto em inglês cru vindo do protocolo.
 - **Riscos**: a versão reportada pelo servidor nem sempre é a do protocolo (proxy por trás); a matriz de versões suportadas pelo Mineflayer muda com o tempo — fica escrita na documentação, não no código.

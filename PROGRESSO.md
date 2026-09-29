@@ -13,6 +13,7 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
+- **Fase 3 começada**: `"version": "auto"` deteta o protocolo do servidor com um pedido de estado e escolhe a versão certa; o comando `/diagnostico` mostra tudo. **Por testar contra servidores reais.**
 - **Base decidida**: este branch. **Já portei tudo o que havia de aproveitável no outro branch**: patch do Minecraft 26.3 (`src/versoes.js`), movimento anti-AFK (`src/movimento.js`, `/andar`) e multi-bot (`src/sessoes.js`, `/bots`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
 
@@ -31,7 +32,8 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
 - [ ] (Fase 2) `replit.nix`: trocar `nodejs-14_x` por uma versão suportada
-- [ ] (Fase 3) `"version": "auto"` com detecção da versão do servidor e comando `/diagnostico`
+- [ ] (Fase 3) Testar a detecção contra servidores reais de versões diferentes (1.8, 1.12, 1.16, 1.20, 1.21, 26.3)
+- [ ] (Fase 3) Traduzir os erros de protocolo mais comuns e dizer quando o servidor usa Via
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
 - [ ] Decidir se `express` sai do `package.json` ou passa a ser usado (ideia I-003)
 
@@ -63,6 +65,22 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-29 (nona sessão)
+
+**Feito — detecção da versão do servidor (Fase 3, primeira parte)**
+- `src/deteccao.js`: pedido de estado num socket normal (sem dependências), leitura de varints, resposta moderna em JSON e resposta antiga da 1.6, e a decisão de qual versão usar. Tudo o que toca na rede é injectado, por isso os 23 testes não precisam de servidor.
+- `"version": "auto"` na configuração: pergunta o protocolo, escolhe a versão da biblioteca que bate certo, e se ninguém responder cai na mais recente **em vez de deixar o utilizador sem bot**.
+- Comando `/diagnostico`: Node, compatibilidade aplicada, servidor, versão configurada e a usar, título, protocolo, jogadores, movimento, sessões e reconexão. É a primeira coisa a colar quando se pede ajuda.
+- Chaves novas nos três idiomas, secção nova nos dois READMEs, e o comando entra no teste de arranque.
+
+**Um teste que se declara ignorado**
+- A correspondência protocolo→versão para o 765 (1.20.4) não existe nesta versão da biblioteca instalada, por isso esse teste imprime que foi ignorado em vez de passar às cegas.
+
+**Estado: 121 verificações, 0 erros.**
+
+**Por fazer**
+- Testar a detecção contra servidores reais — até lá, o `auto` é umatez correcta e não verificada.
 
 ### 2026-09-29 (oitava sessão)
 

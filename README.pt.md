@@ -83,6 +83,23 @@ queda não leva os outros. Cada `x` do nome é trocado por um dígito aleatório
 cada ligação, para o servidor nunca ver o mesmo nome duas vezes. Usa `/bots`
 para ver todos.
 
+## Detecção automática de versão
+
+Com `"version": "auto"` no `settings.json`, o bot pergunta ao servidor que
+protocolo ele fala antes de ligar, e escolhe a versão que bate certo:
+
+```json
+"server": { "ip": "exemplo.com", "port": 25565, "version": "auto" }
+```
+
+- Se o servidor responde, a versão detectada é usada e aparece no log
+- Se não responde, o bot cai na versão mais recente que a biblioteca conhece e
+  avisa — nunca ficas sem bot
+- Uma versão que a biblioteca não conhece é aviso, não crash
+
+O `/diagnostico` mostra o que foi detectado, e é a primeira coisa a colar quando
+se pede ajuda.
+
 ## Movimento anti-AFK
 
 Enquanto o bot está dentro do mundo, anda em círculo e salta, e depois
@@ -165,6 +182,10 @@ Todos os comandos devem ser prefixados com `/` no terminal em que o bot estiver 
 ### /bots
 - **Descrição:** Mostra todos os bots: nome, situação e posição  
 - **Sintaxe:** `/bots`
+### /diagnostico
+- **Descrição:** Mostra o que o bot sabe: versão do Node, compatibilidade aplicada, servidor, versão que vai usar, movimento, sessões e reconexão  
+- **Sintaxe:** `/diagnostico` (também aceita `/diagnostic`)
+
 
 
 

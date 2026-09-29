@@ -83,6 +83,23 @@ reconnection, so one dropping does not take the others down. Every `x` in a
 name is replaced with a random digit on each connection, so the server never
 sees the same name twice. Use `/bots` to see them all.
 
+## Automatic version detection
+
+Set `"version": "auto"` in `settings.json` and the bot asks the server which
+protocol it speaks before connecting, then picks the matching version:
+
+```json
+"server": { "ip": "exemplo.com", "port": 25565, "version": "auto" }
+```
+
+- If the server answers, the detected version is used and logged
+- If it does not answer, the bot falls back to the newest version the
+  library knows and says so — you are never left without a bot
+- A version the library does not know is reported as a warning, not a crash
+
+`/diagnostico` shows exactly what was detected, and is the first thing to
+paste when asking for help.
+
 ## Anti-AFK movement
 
 While the bot is inside the world it walks in a small circle and jumps, then
@@ -165,6 +182,10 @@ All commands must be prefixed with `/` in the terminal where the bot is running:
 ### `/bots`
 - **Description:** Shows every bot: name, state and position  
 - **Syntax:** `/bots`
+### `/diagnostico`
+- **Description:** Shows what the bot knows: Node version, applied compatibility, server, version that will be used, movement, sessions and reconnection  
+- **Syntax:** `/diagnostico` (also accepts `/diagnostic`)
+
 
 
 
