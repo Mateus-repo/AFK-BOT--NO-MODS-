@@ -239,6 +239,46 @@ if (!pkg) {
   }
 }
 
+// -------------------------------- 8. compatibilidade com a versão mínima de Node
+{
+  // A verificação completa (que precisa de rede) corre à parte:
+  //   node .opencode/scripts/verificar-node.mjs
+  let saida = '{}'
+  let correu = false
+  try {
+    saida = execFileSync(
+      process.execPath,
+      [path.join(root, '.opencode/scripts/verificar-node.mjs'), '--rapido', '--json'],
+      { cwd: root, encoding: 'utf8' }
+    )
+    correu = true
+  } catch (err) {
+    saida = err.stdout || '{}'
+    correu = true
+  }
+  if (correu) {
+    try {
+      const dados = JSON.parse(saida || '{}')
+      if (!dados.minimo) {
+        nota('aviso', 'node', 'sem "engines": { "node": ">=X.Y.Z" } no package.json — não há versão mínima declarada')
+      } else if (dados.dependencias && dados.dependencias.length) {
+        for (const d of dados.dependencias.slice(0, 8)) {
+          nota('erro', 'node', `${d.nome} exige Node ${d.menor} (engines.node="${d.engines}") e o mínimo do projecto é ${dados.minimo}`)
+        }
+        if (dados.dependencias.length > 8) {
+          nota('erro', 'node', `...e mais ${dados.dependencias.length - 8} pacote(s)`)
+        }
+      } else {
+        out.ok(`dependências compatíveis com Node ${dados.minimo} (${dados.pacotesAnalisados} pacotes)`)
+      }
+    } catch {
+      nota('aviso', 'node', 'não consegui interpretar o resultado de verificar-node')
+    }
+  } else {
+    nota('aviso', 'node', 'verificar-node.mjs não devolveu nada')
+  }
+}
+
 // ------------------------------------------------------------------- saída
 if (comoJson) {
   console.log(
