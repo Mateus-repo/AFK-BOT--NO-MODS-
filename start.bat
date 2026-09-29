@@ -44,7 +44,7 @@ if %errorlevel% neq 0 (
 
 :run_bot
 echo A iniciar o bot AFK...
-node --max-old-space-size=512 index.js
+node --max-old-space-size=128 --nouse-idle-notification index.js
 
 if %errorlevel% neq 0 (
     echo.

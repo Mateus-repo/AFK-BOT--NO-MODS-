@@ -291,7 +291,38 @@ class BotSession {
       port: this.config.server.port,
       username: this.username,
       auth: 'offline',
-      hideErrors: true
+      hideErrors: true,
+      viewDistance: 2, // Otimizacao Atom: reduz chunks do servidor para o minimo essencial
+      plugins: {
+        // Desativa plugins desnecessarios para poupar 100% de CPU/RAM em processadores fracos
+        particle: false,
+        sound: false,
+        rain: false,
+        scoreboard: false,
+        team: false,
+        tablist: false,
+        boss_bar: false,
+        title: false,
+        experience: false,
+        ray_trace: false,
+        anvil: false,
+        bed: false,
+        book: false,
+        chest: false,
+        command_block: false,
+        craft: false,
+        creative: false,
+        digging: false,
+        enchantment_table: false,
+        fishing: false,
+        furnace: false,
+        villager: false,
+        place_block: false,
+        place_entity: false,
+        generic_place: false,
+        resource_pack: false,
+        breath: false
+      }
     };
 
     if (this.config.server.version && this.config.server.version !== 'auto') {
@@ -450,17 +481,29 @@ class BotSession {
     const R = this.config.movement.radius || 1.2;
     console.log(`[${this.username}] Ciclo anti-AFK iniciado: a andar em circulo de raio ${R}m e a saltar continuamente (${activeSec}s ativo)...`);
 
-    let center = null;
+    let centerX = 0;
+    let centerY = 0;
+    let centerZ = 0;
+    let hasCenter = false;
+
     if (this.config.movement.fixedCenter && typeof this.config.movement.fixedCenter.x === 'number') {
       const fc = this.config.movement.fixedCenter;
-      center = new (require('vec3'))(fc.x, fc.y || 134, fc.z);
+      centerX = fc.x;
+      centerY = fc.y || 134;
+      centerZ = fc.z;
+      hasCenter = true;
     } else if (this.spawnPosition) {
-      center = this.spawnPosition.clone();
+      centerX = this.spawnPosition.x;
+      centerY = this.spawnPosition.y;
+      centerZ = this.spawnPosition.z;
+      hasCenter = true;
     }
 
     const LOOK_AHEAD_ANGLE = Math.PI / 3; // 60 graus a frente na circunferencia
     let direction = 1; // 1 = sentido horario, -1 = anti-horario
-    let lastPos = null;
+    let lastX = 0;
+    let lastZ = 0;
+    let hasLastPos = false;
     let stuckTicks = 0;
     let stuckCount = 0;
 
@@ -472,13 +515,30 @@ class BotSession {
         bot.setControlState('forward', true);
         bot.setControlState('jump', true);
 
-        const current = bot.entity.position;
-        if (!center) center = current.clone();
-        if (!lastPos) lastPos = current.clone();
+        const pos = bot.entity.position;
+        const curX = pos.x;
+        const curY = pos.y;
+        const curZ = pos.z;
 
-        // 1. Detecao de bloqueio por obstaculo
-        const distMoved = Math.hypot(current.x - lastPos.x, current.z - lastPos.z);
-        lastPos = current.clone();
+        if (!hasCenter) {
+          centerX = curX;
+          centerY = curY;
+          centerZ = curZ;
+          hasCenter = true;
+        }
+
+        if (!hasLastPos) {
+          lastX = curX;
+          lastZ = curZ;
+          hasLastPos = true;
+        }
+
+        // 1. Detecao de bloqueio (arimetica pura sem alocacao de objetos)
+        const mx = curX - lastX;
+        const mz = curZ - lastZ;
+        const distMoved = Math.sqrt(mx * mx + mz * mz);
+        lastX = curX;
+        lastZ = curZ;
 
         if (distMoved < 0.02) {
           stuckTicks++;
@@ -486,11 +546,13 @@ class BotSession {
             stuckTicks = 0;
             stuckCount++;
             if (stuckCount >= 2 && !this.config.movement.fixedCenter) {
-              center = current.clone();
+              centerX = curX;
+              centerY = curY;
+              centerZ = curZ;
               direction = Math.random() < 0.5 ? 1 : -1;
               stuckCount = 0;
             } else {
-              direction *= -1; // Inverte o sentido de rotacao para contornar obstaculo
+              direction *= -1; // Inverte o sentido de rotacao
             }
           }
         } else {
@@ -499,21 +561,23 @@ class BotSession {
         }
 
         // 2. Adaptacao de elevacao se mudar de patamar
-        if (bot.entity.onGround && Math.abs(current.y - center.y) > 1.2 && !this.config.movement.fixedCenter) {
-          center = current.clone();
+        if (bot.entity.onGround && Math.abs(curY - centerY) > 1.2 && !this.config.movement.fixedCenter) {
+          centerX = curX;
+          centerY = curY;
+          centerZ = curZ;
         }
 
         // 3. Calculo do ponto alvo no perimetro do circulo
-        const dx = current.x - center.x;
-        const dz = current.z - center.z;
+        const dx = curX - centerX;
+        const dz = curZ - centerZ;
         const currentAngle = Math.atan2(dz, dx);
         const targetAngle = currentAngle + direction * LOOK_AHEAD_ANGLE;
-        const targetX = center.x + R * Math.cos(targetAngle);
-        const targetZ = center.z + R * Math.sin(targetAngle);
+        const targetX = centerX + R * Math.cos(targetAngle);
+        const targetZ = centerZ + R * Math.sin(targetAngle);
 
         // 4. Orientacao suave em direcao ao ponto alvo
-        const toTargetX = targetX - current.x;
-        const toTargetZ = targetZ - current.z;
+        const toTargetX = targetX - curX;
+        const toTargetZ = targetZ - curZ;
         const desiredYaw = Math.atan2(-toTargetX, -toTargetZ);
 
         let diff = (desiredYaw - bot.entity.yaw) % (Math.PI * 2);
