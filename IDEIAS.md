@@ -46,9 +46,10 @@
 
 - Estado: 💡 Nova · Registada: 2026-09-29
 - O quê: um painel local com o estado de cada ligação (servidor, versão, atraso, situação, último erro).
-- Porquê: `express` já é dependência declarada no `package.json` e não é usado em lado nenhum — ou passa a usar-se, ou sai de lá.
+- Resolvido em 2026-09-29: o `express` saiu do `package.json`. Não era usado, e só ele trazia 4 das 15 vulnerabilidades que o `npm audit` reportava. O painel de estado fica para uma ideia nova, se algum dia fizer sentido.
 - Esforço: M · Impacto: médio
 - Toca em: `index.js`, `package.json`, READMEs
+- Nota: só faz sentido depois da I-002 (multi-bot), que já existe. Ver a nota da I-008.
 - Notas: resolver primeiro a I-002; sem vários bots, o painel é uma página com uma linha.
 
 ### I-004 · Ligar através de proxy (Velocity / BungeeCord)

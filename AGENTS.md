@@ -63,6 +63,7 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 | `ROADMAP.md` | plano por fases | `planear-versao` |
 | `CHANGELOG.md` | notas de versão (vai ser criado) | `lancar-versao` |
 | `docs/modded.md` | compatibilidade com servidores modded | `modded` |
+| `docs/TESTAR.md` | procedimento de teste contra um servidor real | `modded` |
 | `.opencode/skills/**` | as skills (criar / renomear / apagar) | `organizar-projeto` |
 | `.opencode/scripts/**` | verificações automáticas | `verificar` |
 | `.gitignore`, `.gitattributes`, `.github/` | estrutura e regras git | `organizar-projeto` |
@@ -152,8 +153,9 @@ Os caminhos nos comandos das skills são **relativos à raiz do repositório**.
 
 - `old-deprecated-10.1/` ficou só com ficheiros **não versionados** (binários, logs, `.idea/`, um `settings.json` com dados reais de um servidor antigo). Podem ser apagados, mas só com aprovação da skill `organizar-projeto`.
 - O launcher `run.cpp` espera uma pasta `nodeMsi/` que **não existe** no repositório; compilar tal como está não chega para um utilizador novo (ideia I-006).
-- `replit.nix` fixa `pkgs.nodejs-14_x`: desatualizado, e o `express` declarado no `package.json` não é usado em lado nenhum.
+- `replit.nix` fixa `pkgs.nodejs-14_x`: desatualizado. O `express` saiu do `package.json` (não era usado) e com ele 4 vulnerabilidades e 70 pacotes de dependências.
 - **Requisitos transversais**: correr em Windows 7, funcionar nas versões mais recentes do Minecraft e funcionar com mods de qualquer loader. Estão no `ROADMAP.md` (R1, R2, R3). Nenhuma alteração pode quebrá-los sem o utilizador decidir.
 - **Windows 7 e mods**: o Java 8 é o último que corre em Windows 7, e o Via actual e o Minecraft 1.20.5+ precisam de Java 21. Não prometas as duas coisas ao mesmo tempo.
 - **`.opencode/scripts/verificar.mjs` corre todos os ficheiros de `test/`** (excepto `harness.js`). Um novo ficheiro de teste entra na verificação sem mais nada.
 - Os três `lang/*.txt` têm o mesmo conjunto de chaves; o `run.cpp` escolhe o idioma a partir de `settings.json`.
+- **Ninguém ligou este bot a um servidor a sério.** O procedimento está em `docs/TESTAR.md`; enquanto não acontecer, tudo o que está documentado sobre funcionar é teoria bem testada, não prova.

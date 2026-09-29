@@ -13,6 +13,7 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
+- **Higiene das dependências**: o `express`, que nunca foi usado, saiu do `package.json`. As vulnerabilidades do `npm audit` baixaram de 15 para 11, e as dependências instaladas de 156 para 86 pacotes. As 11 que ficam vêm todas do Mineflayer (via de autenticação) e não se corrigem sem trocar a biblioteca.
 - **Fase 3 começada**: `"version": "auto"` deteta o protocolo do servidor com um pedido de estado e escolhe a versão certa; o comando `/diagnostico` mostra tudo. **Por testar contra servidores reais.**
 - **Base decidida**: este branch. **Já portei tudo o que havia de aproveitável no outro branch**: patch do Minecraft 26.3 (`src/versoes.js`), movimento anti-AFK (`src/movimento.js`, `/andar`) e multi-bot (`src/sessoes.js`, `/bots`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
@@ -35,7 +36,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 3) Testar a detecção contra servidores reais de versões diferentes (1.8, 1.12, 1.16, 1.20, 1.21, 26.3)
 - [ ] (Fase 3) Traduzir os erros de protocolo mais comuns e dizer quando o servidor usa Via
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
-- [ ] Decidir se `express` sai do `package.json` ou passa a ser usado (ideia I-003)
+- [ ] Testar contra um servidor a sério, seguindo `docs/TESTAR.md`
 
 ## Problemas conhecidos
 
@@ -45,7 +46,8 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - **A reconexão pode ser agressiva** — 10 tentativas com recuo até 60 s dão quase 5 minutos a tentar. Num servidor que recusa a conta, é isso que o utilizador vai ver.
 - **Windows 7 x mods x versões novas não cabem juntos** — o Java 8 é o último que corre em Windows 7, e o Minecraft 1.20.5+ e o Via actual precisam de Java 21. Num PC com Windows 7, o sidecar só deve servir de imediatamente versões mais antigas. **Por confirmar.**
 - **O launcher não está preparado para o Windows 7** — o `run.cpp` instala sempre o Node 22.16.0 de um MSI que não existe no repositório, e o Node 22 não corre em Windows 7. Ideia I-007.
-- **`npm install` com avisos** — 159 pacotes; `@azure/msal-node@1.18.4` declara `engines: 10 || 12 || 14 || 16 || 18` (é aviso, e o 14 está na lista); `lodash.get@4.4.2` marcado como obsoleto (dependência transitiva); `npm audit` aponta 15 vulnerabilidades (8 moderadas, 7 altas) por avaliar.
+- **11 vulnerabilidades do `npm audit`, todas transitivas do Mineflayer** — `prismarine-auth` traz `@azure/msal-node`, `@xboxreplay/xboxlive-auth`, `axios` e `jws`; mais `uuid`, `yggdrasil`, `ajv` e `follow-redirects`. Só entram em acção na autenticação Microsoft. `npm audit fix --force` trocaria a biblioteca: **não foi corrido**.
+- **`minecraft-data` passou a ser dependência declarada** — nós usámos directamente em `src/versoes.js` e `src/deteccao.js`, e estava a funcionar só porque o Mineflayer a trazia. A verificação nova apanha este tipo de erro.
 - **`express` é dependência declarada e não é usado** (ideia I-003).
 - **`nodeMsi/` não existe** — o `run.cpp` instala o Node a partir de um MSI que não está no repositório (ideia I-006).
 - **`replit.nix` fixa Node 14** — desatualizado para a dependência actual.
@@ -65,6 +67,20 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-29 (décima sessão)
+
+**Feito — higiene das dependências**
+- `npm audit` avaliado pela primeira vez: 15 vulnerabilidades (8 moderadas, 7 altas). A maioria vinha de uma dependência directa que **nunca foi usada**: o `express`. Saiu do `package.json`.
+- Resultado: **15 → 11 vulnerabilidades**, **156 → 86 pacotes** instalados. As 11 restantes vêm todas do Mineflayer (pela cadeia de autenticação Microsoft) e não se corrigem sem trocar a biblioteca. `npm audit fix --force` **não foi corrido**, porque trocaria a biblioteca por outra maior.
+- **Bug latente encontrado pelo caminho:** o nosso código usa `minecraft-data` directamente (`src/versoes.js`, `src/deteccao.js`) e só funcionava porque o Mineflayer a trazia. Passou a ser dependência declarada.
+- Nova verificação no `verificar.mjs`: **tudo o que o nosso código importa tem de estar no `package.json`**. Testei-a a propósito, tirando o `minecraft-data`, e ela apanha.
+- `docs/TESTAR.md`: o procedimento para testar contra um servidor a sério, com os cuidados (conta de testes, servidor de testes) e o que cada resultado significa.
+
+**Estado: 123 verificações, 0 erros, 86 pacotes.**
+
+**Nota**
+- O `README` já não manda instalar pacotes à mão: basta `npm install`, que é o que o `package.json` descreve.
 
 ### 2026-09-29 (nona sessão)
 
