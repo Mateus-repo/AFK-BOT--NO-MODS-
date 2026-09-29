@@ -1,0 +1,22 @@
+# Dependências
+node_modules/
+jspm_packages/
+
+# Configuração em uso — o bot reescreve este ficheiro com servidor e conta reais
+settings.json
+launcher_accounts.json
+
+# Logs de execução (contêm servidores reais)
+logs/
+
+# Marcador gerado pelo launcher
+node_installed.flag
+
+# Binários e artefactos compilados
+*.exe
+*.msi
+nodeMsi/
+
+# Configuração de IDE
+.idea/
+.vscode/
