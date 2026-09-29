@@ -20,7 +20,11 @@ const PADROES = [
   { nome: 'token npm', re: /\bnpm_[A-Za-z0-9]{30,}/ },
   { nome: 'token Discord', re: /[\w-]{24}\.[\w-]{6}\.[\w-]{27,}/ },
   { nome: 'chave de API aberta', re: /\bsk-[A-Za-z0-9]{20,}/ },
-  { nome: 'senha explícita', re: /"?(?:password|passwd|senha|token|secret|api[_-]?key)"?\s*[:=]\s*"[^"$\s][^"]{3,}"?/gi },
+  // O nome da chave tem de ser mesmo esse: "jsonwebtoken" não é um token.
+  {
+    nome: 'senha explícita',
+    re: /(?<![A-Za-z0-9_])["']?(?:password|passwd|senha|token|secret|api[_-]?key)["']?\s*[:=]\s*"[^"$\s][^"]{3,}"/gi,
+  },
   { nome: 'e-mail pessoal', re: /[\w.+-]+@[\w-]+\.[\w.]{2,}/ },
   { nome: 'credencial Mojang/Microsoft', re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/ },
 ]
@@ -81,8 +85,12 @@ for (const rel of ficheiros()) {
 }
 
 if (comoJson) {
-  console.log(JSON.stringify({ ok: resultados.length === 0, achados: resultados }, null, 2))
-  process.exit(resultados.length === 0 ? 0 : 1)
+  const bloqueios = resultados.filter((r) => r.tipo !== 'e-mail pessoal')
+  const emails = resultados.filter((r) => r.tipo === 'e-mail pessoal')
+  console.log(
+    JSON.stringify({ ok: bloqueios.length === 0, achados: bloqueios, emails }, null, 2)
+  )
+  process.exit(bloqueios.length === 0 ? 0 : 1)
 }
 
 if (resultados.length === 0) {
@@ -91,17 +99,36 @@ if (resultados.length === 0) {
   process.exit(0)
 }
 
-out.erro(`${resultados.length} suspeita(s) — não commitar até resolver:`)
+// E-mails são avisos, não bloqueios: READMEs e código têm URLs com "@" e
+// exemplos que não são credenciais. Bloquear aí tornaria a skill `commit`
+// inútil.
+const emails = resultados.filter((r) => r.tipo === 'e-mail pessoal')
+const bloqueios = resultados.filter((r) => r.tipo !== 'e-mail pessoal')
+
+if (bloqueios.length === 0) {
+  out.ok('nenhum segredo bloqueante')
+  if (emails.length) {
+    console.log(`  !    ${emails.length} e-mail(s) para revisão manual:`)
+    for (const r of emails.slice(0, 5)) console.log(`       ${r.ficheiro}:${r.linha}  ${r.valor}`)
+  }
+  console.log('\nOK: nada a fazer.')
+  process.exit(0)
+}
+
+out.erro(`${bloqueios.length} suspeita(s) bloqueante(s) — não commitar até resolver:`)
 const vistos = new Set()
-for (const r of resultados) {
+for (const r of bloqueios) {
   const chave = `${r.ficheiro}:${r.linha}:${r.tipo}`
   if (vistos.has(chave)) continue
   vistos.add(chave)
   console.log(`  ${r.ficheiro}:${r.linha}  [${r.tipo}]`)
   console.log(`    ${r.valor}`)
 }
+if (emails.length) {
+  console.log(`\n  !    ${emails.length} e-mail(s) apenas para revisão manual.`)
+}
 console.log(
-  '\nFalsos positivos prováveis: links com @ (ex. <a@b.com>), palavras de exemplo ' +
-    'nos READMEs e em default.json. Decide caso a caso e regista a decisão em PROGRESSO.md.'
+  '\nFalsos positivos prováveis: palavras de exemplo nos READMEs e em default.json. ' +
+    'Decide caso a caso e regista a decisão no PROGRESSO.md.'
 )
 process.exit(1)

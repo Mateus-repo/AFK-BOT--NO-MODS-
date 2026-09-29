@@ -28,20 +28,11 @@ const OBRIGATORIAS = [
 
 function ficheirosLang() {
   const langDir = path.join(root, 'lang')
-  if (!fs_exists(langDir)) return []
+  if (!fs.existsSync(langDir)) return []
   return listFiles(root, langDir)
     .map((f) => path.join(root, f))
     .filter((f) => f.endsWith('.txt'))
     .sort()
-}
-
-import fs from 'node:fs'
-function fs_exists(p) {
-  try {
-    return fs.existsSync(p)
-  } catch {
-    return false
-  }
 }
 
 const ficheiros = ficheirosLang()
