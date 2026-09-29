@@ -58,6 +58,33 @@ Language files are located in the `lang/` folder:
 
 Each line follows the format `key=value`. To add phrases or adjust translations, simply edit the corresponding file.
 
+## Requirements
+
+- **Node.js 14.21.3 or newer** (`npm install` and `node index.js`)
+- Windows 7, 8, 10 or 11. On Windows 7 the last usable Node.js release is 14.21.3, so that is the project minimum
+- A Minecraft account (mojang or Microsoft)
+
+## Running the tests
+
+The tests never connect to a server: the bot is started with a simulated
+Mineflayer, so you can check the startup, the commands and the settings file
+without touching a real Minecraft account.
+
+```bash
+npm test
+```
+
+## How the bot behaves
+
+- If `settings.json` is missing, incomplete or broken, the bot starts with the
+  values from `default.json` and says so, instead of crashing
+- Changing server, name, version, language or account type only rewrites the
+  fields you changed; anything else in `settings.json` is kept
+- `/default` keeps a copy of your settings in `settings.json.bak` before replacing it
+- If the connection drops, the bot reconnects on its own with an exponential
+  backoff (1s, 2s, 4s ... up to 60s, ten attempts). Changing the server, the name,
+  the version or stopping the bot cancels the reconnection
+
 ## Available Commands
 All commands must be prefixed with `/` in the terminal where the bot is running:
 

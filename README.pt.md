@@ -58,6 +58,33 @@ Os arquivos de idioma ficam na pasta `lang/`:
 
 Cada linha segue o formato `chave=valor`. Para adicionar frases ou ajustar traduções, basta editar o arquivo correspondente.
 
+## Requisitos
+
+- **Node.js 14.21.3 ou mais recente** (`npm install` e `node index.js`)
+- Windows 7, 8, 10 ou 11. No Windows 7 a última versão do Node.js que corre é a 14.21.3, por isso esse é o mínimo do projecto
+- Uma conta de Minecraft (mojang ou Microsoft)
+
+## Correr os testes
+
+Os testes nunca ligam a um servidor: o bot arranca com o Mineflayer simulado,
+para se poder verificar o arranque, os comandos e o ficheiro de configuração sem
+tocar numa conta a sério.
+
+```bash
+npm test
+```
+
+## Como se comporta o bot
+
+- Se o `settings.json` não existir, estiver incompleto ou partido, o bot arranca com os
+  valores do `default.json` e avisa, em vez de crashar
+- Mudar servidor, nome, versão, idioma ou tipo de conta só reescreve os campos que
+  mudaste; o resto do `settings.json` fica como está
+- O `/default` guarda uma cópia da tua configuração em `settings.json.bak` antes de a substituir
+- Se a ligação cair, o bot volta a ligar-se sozinho com recuo exponencial
+  (1s, 2s, 4s… até 60s, dez tentativas). Mudar o servidor, o nome, a versão ou parar o
+  bot cancela a reconexão
+
 ## Comandos Disponíveis
 Todos os comandos devem ser prefixados com `/` no terminal em que o bot estiver rodando:
 
