@@ -64,6 +64,25 @@ Each line follows the format `key=value`. To add phrases or adjust translations,
 - Windows 7, 8, 10 or 11. On Windows 7 the last usable Node.js release is 14.21.3, so that is the project minimum
 - A Minecraft account (mojang or Microsoft)
 
+## Running several bots
+
+To run more than one bot on the same server, add a `bots` array to
+`settings.json`. The single `bot-account` is then only used for the account
+type and password that the bots inherit:
+
+```json
+"bots": [
+  { "username": "botxxxx" },
+  { "username": "botxxxx" },
+  { "username": "meu_bot" }
+]
+```
+A bot can have its own `password` when it uses a different account.
+Each bot gets its own session, with its own movement and its own
+reconnection, so one dropping does not take the others down. Every `x` in a
+name is replaced with a random digit on each connection, so the server never
+sees the same name twice. Use `/bots` to see them all.
+
 ## Anti-AFK movement
 
 While the bot is inside the world it walks in a small circle and jumps, then
@@ -143,6 +162,10 @@ All commands must be prefixed with `/` in the terminal where the bot is running:
 ### `/andar`
 - **Description:** Turns the anti-AFK movement on or off at runtime  
 - **Syntax:** `/andar [on|off]`
+### `/bots`
+- **Description:** Shows every bot: name, state and position  
+- **Syntax:** `/bots`
+
 
 
 ### `/version`

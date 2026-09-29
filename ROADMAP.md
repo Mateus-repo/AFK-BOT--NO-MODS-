@@ -36,7 +36,7 @@ Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com sup
 
 > **Feito em 2026-09-29:** configuração validada e escrita sem perder campos (`src/config.js`), reconexão com recuo exponencial (`src/reconnect.js`), idiomas (`src/i18n.js`) e log (`src/log.js`) extraídos do `index.js`, 35 testes que correm sem servidor (`npm test`), `replit.nix` com Node actualizado.
 > **Bug encontrado pelos testes:** depois de `/changeserver` ou `/changename`, o bot voltava a ligar com os valores antigos, porque a configuração em `index.js` deixou de ser o mesmo objecto que a do módulo. Corrigido.
-> **2026-09-29:** portados do outro branch o patch do 26.3 (`src/versoes.js`) e o movimento anti-AFK (`src/movimento.js`, com o comando `/andar`). **74 verificações** passam sem ligar a servidor nenhum.
+> **2026-09-29:** portados do outro branch o patch do 26.3 (`src/versoes.js`), o movimento anti-AFK (`src/movimento.js`, comando `/andar`) e o multi-bot (`src/sessoes.js`, comando `/bots`). **Fica a última peça do outro branch.** **74 verificações** passam sem ligar a servidor nenhum.
 >
 > **Falta:** mover `createBot()` e os comandos para módulos próprios, portar o multi-bot, e **um teste a correr contra um servidor a sério** — os testes de arranque usam Mineflayer simulado.
 

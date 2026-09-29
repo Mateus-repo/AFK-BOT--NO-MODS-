@@ -15,7 +15,7 @@
 - Decisão: **a base é este branch.** O outro (`Tests`) passa a ser fonte de peças, não base.
 - Feito: o patch do 26.3 já foi portado para `src/versoes.js` e reescrito para ser testável.
 - Feito: o patch do 26.3 (`src/versoes.js`) e o movimento anti-AFK (`src/movimento.js`, comando `/andar`).
-- Falta portar: **multi-bot** (array `bots` no `settings.json`).
+- Feito também: **multi-bot** (`src/sessoes.js`, comando `/bots`). **O outro branch está todo portado.**
 - O quê: o branch `Tests` (código do amigo) e o branch de trabalho têm o mesmo objectivo e resoluções muito diferentes. Decidir a base e portar o que falta de uma para a outra.
 - Porquê: o `Tests` tem multi-bot, movimento anti-AFK, tempo limite de ligação e um patch à mão para o Minecraft 26.3; este branch tem configuração validada, três idiomas, 16 comandos, reconexão, 35 testes e a ferramenta de verificação. Nenhum dos dois tem tudo.
 - Esforço: L · Impacto: alto
@@ -34,7 +34,8 @@
 
 ### I-002 · Vários bots, um por servidor
 
-- Estado: 💡 Nova · Registada: 2026-09-29
+- Estado: 📦 Feita · Registada: 2026-09-29 · Feita: 2026-09-29 — `src/sessoes.js`, comando `/bots`
+- Nota: entrou no âmbito do multi-bot, que também renomeia cada sessão para nunca repetir nome.
 - O quê: um processo a gerir várias contas, cada uma ligada a um servidor, com estado individual e comando para listar e parar.
 - Porquê: quem usa bot AFK normalmente quer vários servidores ao mesmo tempo.
 - Esforço: L · Impacto: alto

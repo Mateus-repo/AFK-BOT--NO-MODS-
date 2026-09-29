@@ -13,7 +13,7 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
-- **Base decidida**: este branch. Já portados do outro: o patch do Minecraft 26.3 (`src/versoes.js`) e o movimento anti-AFK (`src/movimento.js`, com o comando `/andar`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
+- **Base decidida**: este branch. **Já portei tudo o que havia de aproveitável no outro branch**: patch do Minecraft 26.3 (`src/versoes.js`), movimento anti-AFK (`src/movimento.js`, `/andar`) e multi-bot (`src/sessoes.js`, `/bots`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
 
 ## Em curso
@@ -24,7 +24,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
-- [ ] (Fase 2) Portar o **multi-bot** do outro branch (`bots` no `settings.json`)
+- [ ] (Fase 2) Testar o **multi-bot** num servidor a sério (nomes repetidos, kicked, limites de jogadores)
 - [ ] (Fase 2) Testar o **movimento anti-AFK** num servidor a sério: os ângulos e o raio são um palpite até haver jogo
 - [ ] Testar o patch do 26.3 contra um servidor a sério — **é o requisito R2 e ainda ninguém o confirmou**
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
@@ -63,6 +63,22 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-29 (oitava sessão)
+
+**Feito — multi-bot, a última peça do outro branch**
+- `src/sessoes.js`: geração de nomes (`botxxxx` → `bot1234`, para o servidor nunca ver o mesmo nome duas vezes), leitura da lista de bots da configuração (herdam tipo de conta e senha) e gerenciador onde cada sessão tem estado, movimento e reconexão próprios.
+- `test/sessoes.js`: **16 testes** (nomes, herança, lista inválida, sessão que falha sem levar as outras, estados independentes).
+- `test/multibot.js`: **8 verificações de ponta a ponta** — arranca o bot com dois bots na configuração e confirma que ambos ligam, com nomes diferentes, e que o `/bots` os lista.
+- Comando `/bots`, com chaves nos três idiomas e nos dois READMEs.
+- `index.js`: `createBot()` agora liga uma sessão por bot; as mudanças deliberadas (`/changeserver`, `/changename`, `/version`) e o `/stop` passam pelo gerenciador. **Os comandos antigos (`/pos`, `/ping`, `/chat`) continuam a falar com a sessão principal, sem mudar de comportamento.**
+
+**Estado: 98 verificações, 0 erros.**
+
+**Nota**
+- O `/andar` continua a actuar só na sessão principal. Com vários bots, o movimento de cada sessão é controlado pela sua própria configuração; falta um comando que faça isso por sessão.
+
+**O outro branch está todo portado.** Falta testar tudo num servidor a sério.
 
 ### 2026-09-29 (sétima sessão)
 

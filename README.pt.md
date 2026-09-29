@@ -64,6 +64,25 @@ Cada linha segue o formato `chave=valor`. Para adicionar frases ou ajustar tradu
 - Windows 7, 8, 10 ou 11. No Windows 7 a última versão do Node.js que corre é a 14.21.3, por isso esse é o mínimo do projecto
 - Uma conta de Minecraft (mojang ou Microsoft)
 
+## Correr vários bots
+
+Para correr mais do que um bot no mesmo servidor, acrescenta um array `bots`
+ao `settings.json`. O `bot-account` passa a servir só o tipo de conta e a senha
+que os bots herdam:
+
+```json
+"bots": [
+  { "username": "botxxxx" },
+  { "username": "botxxxx" },
+  { "username": "meu_bot" }
+]
+```
+Um bot pode ter a sua própria `password` quando usa outra conta.
+Cada bot tem a sua sessão, com o seu movimento e a sua reconexão, por isso uma
+queda não leva os outros. Cada `x` do nome é trocado por um dígito aleatório a
+cada ligação, para o servidor nunca ver o mesmo nome duas vezes. Usa `/bots`
+para ver todos.
+
 ## Movimento anti-AFK
 
 Enquanto o bot está dentro do mundo, anda em círculo e salta, e depois
@@ -143,6 +162,10 @@ Todos os comandos devem ser prefixados com `/` no terminal em que o bot estiver 
 ### /andar
 - **Descrição:** Liga ou desliga o movimento anti-AFK sem mexer na configuração  
 - **Sintaxe:** `/andar [on|off]`
+### /bots
+- **Descrição:** Mostra todos os bots: nome, situação e posição  
+- **Sintaxe:** `/bots`
+
 
 
 ### /version
