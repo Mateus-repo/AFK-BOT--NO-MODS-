@@ -13,7 +13,7 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
-- **Existe outro branch, `Tests`**, com uma implementação diferente (ver *Diário*, 2026-09-29). A escolha da base é a decisão mais importante em aberto.
+- **Base decidida**: este branch. O patch do Minecraft 26.3 do outro branch já foi portado para `src/versoes.js` e reescrito para ser testável (17 testes). **Por testar contra um servidor real** — o remapeamento de pacotes não tem teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
 
 ## Em curso
@@ -24,7 +24,9 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
-- [ ] **Decidir a base**: o branch `Tests` ou este (ideia I-008) — o dono do projecto decide
+- [ ] (Fase 2) Portar o **multi-bot** do outro branch (`bots` no `settings.json`)
+- [ ] (Fase 2) Portar o **movimento anti-AFK** (círculos com saltos, detecção de bloqueio, pausas)
+- [ ] Testar o patch do 26.3 contra um servidor a sério — **é o requisito R2 e ainda ninguém o confirmou**
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
@@ -61,6 +63,23 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-29 (sexta sessão)
+
+**Decidido pelo dono do projecto: a base é este branch.** O outro fica como fonte de peças.
+
+**Feito — porta do patch do Minecraft 26.3**
+- `src/versoes.js`: remapeamento dos identificadores de pacote do protocolo, lista de pacotes do estado de configuração, `teleport_confirm` com coordenadas, e registo da versão na biblioteca e no Mineflayer.
+- Reescrito a partir do código do outro branch, com a parte de remapeamento isolada em funções puras: **17 testes** (`test/versoes.js`) que não precisam da biblioteca.
+- O `index.js` chama-o **antes** de `require('mineflayer')` — se não, o Mineflayer já carregou a lista de versões sem a nova. A mensagem de resultado aparece no arranque, traduzida.
+- `verificar.mjs` passou a correr todos os ficheiros de `test/`: **52 verificações**.
+
+**Nota honesta**
+- O remapeamento vem do outro branch e **não foi testado contra um servidor real**. Está certo na aritmética (testado) mas o protocolo pode ter mudado. Só um teste com o 26.3 confirma.
+
+**Por fazer**
+- Multi-bot e movimento anti-AFK, ambos do outro branch.
+- Testar o 26.3 e o bot contra um servidor a sério.
 
 ### 2026-09-29 (quinta sessão)
 

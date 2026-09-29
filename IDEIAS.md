@@ -11,7 +11,10 @@
 
 ### I-008 · Juntar as duas implementações
 
-- Estado: 💡 Nova · Registada: 2026-09-29
+- Estado: ✅ Aprovada · Registada: 2026-09-29 · Decidida: 2026-09-29
+- Decisão: **a base é este branch.** O outro (`Tests`) passa a ser fonte de peças, não base.
+- Feito: o patch do 26.3 já foi portado para `src/versoes.js` e reescrito para ser testável.
+- Falta portar: multi-bot e movimento anti-AFK.
 - O quê: o branch `Tests` (código do amigo) e o branch de trabalho têm o mesmo objectivo e resoluções muito diferentes. Decidir a base e portar o que falta de uma para a outra.
 - Porquê: o `Tests` tem multi-bot, movimento anti-AFK, tempo limite de ligação e um patch à mão para o Minecraft 26.3; este branch tem configuração validada, três idiomas, 16 comandos, reconexão, 35 testes e a ferramenta de verificação. Nenhum dos dois tem tudo.
 - Esforço: L · Impacto: alto
@@ -20,7 +23,7 @@
 
 ### I-009 · Patch do Minecraft 26.3
 
-- Estado: 🔍 A avaliar · Registada: 2026-09-29
+- Estado: 📦 Feita · Registada: 2026-09-29 · Feita: 2026-09-29 — `src/versoes.js`, 17 testes
 - O quê: o `Tests` obriga a biblioteca `minecraft-data` a aceitar a versão 26.3 (que ainda não existe nos dados), remapeando os identificadores de pacote do protocolo e forçando o carregador de chunks. Foi escrito à mão e não tem teste.
 - Porquê: é o que permite entrar nas versões mais recentes (R2) sem esperar pela biblioteca.
 - Esforço: M · Impacto: alto

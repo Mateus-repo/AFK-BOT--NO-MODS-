@@ -35,8 +35,15 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 |---|---|---|
 | `index.js` — função do comando + `case` no `switch` | comandos do terminal | `novo-comando` |
 | `index.js` — `createBot()`, eventos, reconexão | camada de ligação | `modded` |
-| `index.js` — composição, ligação e comandos | comandos: `novo-comando`; ligação: `modded` |
 | `lang/*.txt` | idiomas (`chave=valor`) | `traducoes` |
+| `src/config.js` | leitura, validação e escrita do `settings.json` | `modded` |
+| `src/i18n.js` | carregar idiomas e comparar chaves | `traducoes` |
+| `src/log.js` | log no terminal e em `logs/latest.log` | `modded` |
+| `src/reconnect.js` | reconexão com recuo exponencial | `modded` |
+| `src/versoes.js` | compatibilidade com versões que a biblioteca não conhece | `modded` |
+| `test/testes.js` | caracterização da configuração, idiomas, log e reconexão | quem alterar um `src/` |
+| `test/versoes.js` | testes do remapeamento de pacotes | `modded` |
+| `test/arranque.js` e `test/harness.js` | arranque do bot com Mineflayer simulado | quem alterar o arranque |
 | `settings.json` | configuração em uso (o bot reescreve) | ninguém — nunca versionar |
 | `default.json` | modelo de configuração | `organizar-projeto` |
 | `package.json` / `package-lock.json` | dependências | `commit` (escopo `deps`) |
@@ -142,4 +149,5 @@ Os caminhos nos comandos das skills são **relativos à raiz do repositório**.
 - `replit.nix` fixa `pkgs.nodejs-14_x`: desatualizado, e o `express` declarado no `package.json` não é usado em lado nenhum.
 - **Requisitos transversais**: correr em Windows 7, funcionar nas versões mais recentes do Minecraft e funcionar com mods de qualquer loader. Estão no `ROADMAP.md` (R1, R2, R3). Nenhuma alteração pode quebrá-los sem o utilizador decidir.
 - **Windows 7 e mods**: o Java 8 é o último que corre em Windows 7, e o Via actual e o Minecraft 1.20.5+ precisam de Java 21. Não prometas as duas coisas ao mesmo tempo.
-- Os três `lang/*.txt` têm as mesmas 69 chaves; o `run.cpp` escolhe o idioma a partir de `settings.json`.
+- **`.opencode/scripts/verificar.mjs` corre todos os ficheiros de `test/`** (excepto `harness.js`). Um novo ficheiro de teste entra na verificação sem mais nada.
+- Os três `lang/*.txt` têm o mesmo conjunto de chaves; o `run.cpp` escolhe o idioma a partir de `settings.json`.

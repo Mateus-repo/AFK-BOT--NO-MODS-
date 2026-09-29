@@ -13,7 +13,7 @@ Registados a 2026-09-29 pelo dono do projecto. **Nenhuma fase pode quebrar isto*
 | # | Requisito | Como se garante |
 |---|---|---|
 | R1 | Correr em **Windows 7** (e Windows 10/11) | mínimo de Node **14.21.3** declarado em `package.json` (`engines.node`) e verificado por `verificar-node.mjs`; o launcher tem de instalar o Node certo conforme o Windows |
-| R2 | Funcionar nas **versões mais recentes do Minecraft** | matriz de versões testada e documentada; nada de fixar a versão no código |
+| R2 | Funcionar nas **versões mais recentes do Minecraft** | matriz de versões testada e documentada; nada de fixar a versão no código; `src/versoes.js` prepara versões que a biblioteca ainda não conhece |
 | R3 | Funcionar com **mods de qualquer loader** (Forge, Fabric, NeoForge) | Fase 4 (sidecar local Via) + `docs/modded.md`; "por testar" é escrito até haver teste |
 
 Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com suporte oficial a Windows 7). Estado verificado: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros compilam com o Node 14.21.3.
@@ -54,6 +54,8 @@ Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com sup
 
 ## Fase 4 · Compatibilidade com mods · estado: **decidido (sidecar local Via), por implementar** · dona: `modded`
 
+> **Base escolhida em 2026-09-29 pelo dono do projecto: este branch.** O patch do 26.3 do outro branch foi portado e reescrito para `src/versoes.js`, com 17 testes.
+>
 > Conflito conhecido com R1: o Java necessário para o Via e para o Minecraft 1.20.5+ é o Java 21, e o **Java 8 é o último que corre em Windows 7**. Num PC com Windows 7, o sidecar pode só conseguir falar com servidores de versões mais antigas. **Por confirmar** — ver `IDEIAS.md` (I-001) e `docs/modded.md`.
 
 - **Objectivo**: entrar em servidores Forge/Fabric/NeoForge, ou explicar com precisão porque que não é possível e o que o utilizador pode fazer.
@@ -79,6 +81,7 @@ Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com sup
 - **2026-09-29** — Restaurar o código para a raiz antes de melhorar seja o que for. Motivo: nada pode ser testado com o código arquivado.
 - **2026-09-29** — Um comando novo implica sempre três alterações (idioma, código, README). Motivo: comando sem texto traduzido ou sem documentar é dívida.
 - **2026-09-29** — Mínimo de Node fixado em **14.21.3** (R1), declarado no `package.json` e verificado automaticamente. Motivo: o Node 14 é a última série com suporte oficial a Windows 7. **Revisto depois:** o branch `Tests` usa Node 18.20.8 x86 com `NODE_SKIP_PLATFORM_CHECK=1`, e essa via tem de ser testada antes de se decidir.
+- **2026-09-29** — **Este branch é a base.** O do outro autor fica como fonte de peças: o patch do 26.3 foi portado (e reescrito, com testes), e o multi-bot e o movimento anti-AFK estão por portar. Motivo: o dono do projecto preferiu esta implementação.
 - **2026-09-29** — O `package.json` dita a dependência principal do projecto: `mineflayer`, `minecraft-data` (para versões) e o launcher quando existir. Motivo: as dependências transitivas do Mineflayer são o que dá acesso a `prismarine-*`; o resto entra por ser preciso.
 - **2026-09-29** — O roadmap só aponta para o `PROGRESSO.md` e para o `IDEIAS.md`; nunca duplica tarefas. Motivo: dois sítios com a mesma lista divergem.
 - **2026-09-29** — Para servidores com mods ficamos com o **sidecar local Via** (ideia I-001), e não com a documentação de ViaVersion no servidor. Motivo: o utilizador escolheu a opção que não depende do dono do servidor. A documentação de ViaVersion no servidor fica como alternativa a explicar.
