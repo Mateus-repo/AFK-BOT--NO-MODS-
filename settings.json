@@ -1,7 +1,7 @@
 {
   "server": {
-    "ip": "Atrasados4everAlone.aternos.me",
-    "port": 34452,
+    "ip": "Localhost",
+    "port": 25565,
     "version": "26.3"
   },
   "bots": [

@@ -4,6 +4,11 @@ title AFK Bot Minecraft 26.3
 
 set "NODE_SKIP_PLATFORM_CHECK=1"
 
+if exist "%~dp0node.exe" (
+    set "PATH=%~dp0;%PATH%"
+    goto check_modules
+)
+
 where node >nul 2>nul
 if %errorlevel% equ 0 goto check_modules
 
