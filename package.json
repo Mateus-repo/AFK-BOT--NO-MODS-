@@ -4,7 +4,8 @@
   "description": "Afk bot for minecraft servers.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/testes.js && node test/arranque.js",
+    "verificar": "node .opencode/scripts/verificar.mjs"
   },
   "author": "Lamgerr",
   "license": "MIT",
