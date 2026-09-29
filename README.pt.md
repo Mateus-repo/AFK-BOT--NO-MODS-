@@ -64,6 +64,27 @@ Cada linha segue o formato `chave=valor`. Para adicionar frases ou ajustar tradu
 - Windows 7, 8, 10 ou 11. No Windows 7 a última versão do Node.js que corre é a 14.21.3, por isso esse é o mínimo do projecto
 - Uma conta de Minecraft (mojang ou Microsoft)
 
+## Movimento anti-AFK
+
+Enquanto o bot está dentro do mundo, anda em círculo e salta, e depois
+descansa. É o que evita que a maioria dos servidores expulse um cliente parado.
+Não é forma de contornar anticheat, e configura-se no `settings.json`:
+
+```json
+"movement": {
+  "enabled": true,
+  "activeDurationSeconds": 180,
+  "pauseDurationSeconds": 30,
+  "radius": 1.2
+}
+```
+
+- `activeDurationSeconds`: quanto tempo anda antes de descansar
+- `pauseDurationSeconds`: quanto tempo descansa (0 para não descansar)
+- `radius`: raio do círculo em blocos, de 0.5 a 8
+
+Usa `/andar [on|off]` para ligar e desligar sem mexer no ficheiro.
+
 ## Correr os testes
 
 Os testes nunca ligam a um servidor: o bot arranca com o Mineflayer simulado,
@@ -119,6 +140,10 @@ Todos os comandos devem ser prefixados com `/` no terminal em que o bot estiver 
 ### /ram
 - **Descrição**: Reinicia o bot aplicando a configuração de memória
 - **Sintaxe**: `/ram`
+### /andar
+- **Descrição:** Liga ou desliga o movimento anti-AFK sem mexer na configuração  
+- **Sintaxe:** `/andar [on|off]`
+
 
 ### /version
 - **Descrição**: Altera a versão do servidor e reconecta

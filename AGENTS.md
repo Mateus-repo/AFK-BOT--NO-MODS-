@@ -41,8 +41,10 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 | `src/log.js` | log no terminal e em `logs/latest.log` | `modded` |
 | `src/reconnect.js` | reconexão com recuo exponencial | `modded` |
 | `src/versoes.js` | compatibilidade com versões que a biblioteca não conhece | `modded` |
+| `src/movimento.js` | movimento anti-AFK (círculos, saltos, pausas) | `modded` |
 | `test/testes.js` | caracterização da configuração, idiomas, log e reconexão | quem alterar um `src/` |
 | `test/versoes.js` | testes do remapeamento de pacotes | `modded` |
+| `test/movimento.js` | testes do movimento anti-AFK | `modded` |
 | `test/arranque.js` e `test/harness.js` | arranque do bot com Mineflayer simulado | quem alterar o arranque |
 | `settings.json` | configuração em uso (o bot reescreve) | ninguém — nunca versionar |
 | `default.json` | modelo de configuração | `organizar-projeto` |

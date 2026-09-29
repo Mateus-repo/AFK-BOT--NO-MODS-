@@ -36,7 +36,9 @@ Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com sup
 
 > **Feito em 2026-09-29:** configuração validada e escrita sem perder campos (`src/config.js`), reconexão com recuo exponencial (`src/reconnect.js`), idiomas (`src/i18n.js`) e log (`src/log.js`) extraídos do `index.js`, 35 testes que correm sem servidor (`npm test`), `replit.nix` com Node actualizado.
 > **Bug encontrado pelos testes:** depois de `/changeserver` ou `/changename`, o bot voltava a ligar com os valores antigos, porque a configuração em `index.js` deixou de ser o mesmo objecto que a do módulo. Corrigido.
-> **Falta:** mover `createBot()` e os comandos para módulos próprios (a composição continua no `index.js`), e **um teste a correr contra um servidor a sério** — os testesArrancados usam Mineflayer simulado.
+> **2026-09-29:** portados do outro branch o patch do 26.3 (`src/versoes.js`) e o movimento anti-AFK (`src/movimento.js`, com o comando `/andar`). **74 verificações** passam sem ligar a servidor nenhum.
+>
+> **Falta:** mover `createBot()` e os comandos para módulos próprios, portar o multi-bot, e **um teste a correr contra um servidor a sério** — os testes de arranque usam Mineflayer simulado.
 
 - **Objectivo**: o bot não perde configuração, não rebenta com ficheiros inválidos e volta sozinho quando a ligação cai.
 - **Inclui**: validação e valores por omissão ao ler `settings.json`; reescrita do ficheiro que **preserve campos desconhecidos** (hoje `changeServer()` regrava o ficheiro inteiro); reconexão automática com recuo exponencial e limite de tentativas; diagnóstico nos eventos `kicked` e `end`; separação do `index.js` monolítico em módulos pequenos (configuração, idiomas, log, ligação, comandos) — só depois da Fase 1 estar verde.

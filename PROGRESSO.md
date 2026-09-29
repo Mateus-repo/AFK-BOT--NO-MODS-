@@ -13,7 +13,7 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
-- **Base decidida**: este branch. O patch do Minecraft 26.3 do outro branch já foi portado para `src/versoes.js` e reescrito para ser testável (17 testes). **Por testar contra um servidor real** — o remapeamento de pacotes não tem teste de integração.
+- **Base decidida**: este branch. Já portados do outro: o patch do Minecraft 26.3 (`src/versoes.js`) e o movimento anti-AFK (`src/movimento.js`, com o comando `/andar`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
 
 ## Em curso
@@ -25,7 +25,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
 - [ ] (Fase 2) Portar o **multi-bot** do outro branch (`bots` no `settings.json`)
-- [ ] (Fase 2) Portar o **movimento anti-AFK** (círculos com saltos, detecção de bloqueio, pausas)
+- [ ] (Fase 2) Testar o **movimento anti-AFK** num servidor a sério: os ângulos e o raio são um palpite até haver jogo
 - [ ] Testar o patch do 26.3 contra um servidor a sério — **é o requisito R2 e ainda ninguém o confirmou**
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
@@ -64,6 +64,23 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 ## Diário de sessões
 
 
+### 2026-09-29 (sétima sessão)
+
+**Feito — movimento anti-AFK portado do outro branch**
+- `src/movimento.js`: andar em círculo com saltos, detecção de bloqueio (inverte o sentido, recentra ao fim de duas vezes), adaptação a mudanças de patamar e ciclo de pausa. A geometria e a decisão de obstáculo estão em funções puras.
+- `test/movimento.js`: **18 testes**, incluindo limites de configuração (raio entre 0.5 e 8, durações limitadas) e o ciclo de fases com relógio falso.
+- **Bug apanhado pelos testes:** `diferencaAngular` somava a volta completa em vez de a subtrair — o bot virava sempre para o lado errado ao passar dos 180 graus. Só apareceu porque o teste mede a diferença angular mais curta.
+- Configuração: secção `movement` no `default.json`, validada em `src/config.js` (liga por omissão: 180 s a andar, 30 s de pausa, raio 1.2).
+- Comando `/andar [on|off]` para ligar e desligar sem mexer no ficheiro, com as chaves nos três idiomas e documentação nos dois READMEs.
+- Ligado ao ciclo de vida: arranca no `spawn`, pára no `end` e no `/stop`.
+- O teste de arranque passou a exercitar o comando de ponta a ponta (o bot simulado recebe `controlo:forward=true`).
+
+**Estado da verificação: 74 verificações, 0 erros.**
+
+**Por fazer**
+- Multi-bot, a última peça do outro branch.
+- Testar contra um servidor a sério: movimento e remapeamento do 26.3.
+
 ### 2026-09-29 (sexta sessão)
 
 **Decidido pelo dono do projecto: a base é este branch.** O outro fica como fonte de peças.
@@ -72,7 +89,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - `src/versoes.js`: remapeamento dos identificadores de pacote do protocolo, lista de pacotes do estado de configuração, `teleport_confirm` com coordenadas, e registo da versão na biblioteca e no Mineflayer.
 - Reescrito a partir do código do outro branch, com a parte de remapeamento isolada em funções puras: **17 testes** (`test/versoes.js`) que não precisam da biblioteca.
 - O `index.js` chama-o **antes** de `require('mineflayer')` — se não, o Mineflayer já carregou a lista de versões sem a nova. A mensagem de resultado aparece no arranque, traduzida.
-- `verificar.mjs` passou a correr todos os ficheiros de `test/`: **52 verificações**.
+- `verificar.mjs` passou a correr todos os ficheiros de `test/`: **74 verificações**.
 
 **Nota honesta**
 - O remapeamento vem do outro branch e **não foi testado contra um servidor real**. Está certo na aritmética (testado) mas o protocolo pode ter mudado. Só um teste com o 26.3 confirma.

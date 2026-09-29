@@ -64,6 +64,27 @@ Each line follows the format `key=value`. To add phrases or adjust translations,
 - Windows 7, 8, 10 or 11. On Windows 7 the last usable Node.js release is 14.21.3, so that is the project minimum
 - A Minecraft account (mojang or Microsoft)
 
+## Anti-AFK movement
+
+While the bot is inside the world it walks in a small circle and jumps, then
+rests. This is what keeps most servers from kicking an idle client. It is not
+a way around an anticheat, and it is configurable in `settings.json`:
+
+```json
+"movement": {
+  "enabled": true,
+  "activeDurationSeconds": 180,
+  "pauseDurationSeconds": 30,
+  "radius": 1.2
+}
+```
+
+- `activeDurationSeconds`: how long it walks before resting
+- `pauseDurationSeconds`: how long it rests (0 for no rest)
+- `radius`: circle radius in blocks, from 0.5 to 8
+
+Use `/andar [on|off]` to switch it at runtime without editing the file.
+
 ## Running the tests
 
 The tests never connect to a server: the bot is started with a simulated
@@ -119,6 +140,10 @@ All commands must be prefixed with `/` in the terminal where the bot is running:
 ### `/ram`
 - **Description:** Restarts the bot, applying the memory configuration  
 - **Syntax:** `/ram`
+### `/andar`
+- **Description:** Turns the anti-AFK movement on or off at runtime  
+- **Syntax:** `/andar [on|off]`
+
 
 ### `/version`
 - **Description:** Changes the server version and reconnects  
