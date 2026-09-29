@@ -9,6 +9,25 @@
 - Toca em: `run.cpp`, READMEs, `package.json`
 - Notas: o MSI tem de ser descarregado de uma URL por plataforma (ou instalado a partir do `npx node@X`, que dá um Node portátil sem instalador — mais simples e sem privilégios de administrador). Ideia ligada a I-006.
 
+### I-008 · Juntar as duas implementações
+
+- Estado: 💡 Nova · Registada: 2026-09-29
+- O quê: o branch `Tests` (código do amigo) e o branch de trabalho têm o mesmo objectivo e resoluções muito diferentes. Decidir a base e portar o que falta de uma para a outra.
+- Porquê: o `Tests` tem multi-bot, movimento anti-AFK, tempo limite de ligação e um patch à mão para o Minecraft 26.3; este branch tem configuração validada, três idiomas, 16 comandos, reconexão, 35 testes e a ferramenta de verificação. Nenhum dos dois tem tudo.
+- Esforço: L · Impacto: alto
+- Toca em: `index.js`, `src/`, `package.json`, `default.json`, READMEs
+- Notas: o `Tests` foi verificado a arrancar (sem servidor, com Mineflayer simulado) e funciona; o `settings.json` dele está versionado com um servidor a sério, o que não se repete. Decisão do dono do projecto: (a) base = `Tests` e trazer a nossa infra-estrutura, (b) base = nossa e portar multi-bot + movimento + o patch 26.3, (c) manter os dois em paralelo durante um tempo.
+
+### I-009 · Patch do Minecraft 26.3
+
+- Estado: 🔍 A avaliar · Registada: 2026-09-29
+- O quê: o `Tests` obriga a biblioteca `minecraft-data` a aceitar a versão 26.3 (que ainda não existe nos dados), remapeando os identificadores de pacote do protocolo e forçando o carregador de chunks. Foi escrito à mão e não tem teste.
+- Porquê: é o que permite entrar nas versões mais recentes (R2) sem esperar pela biblioteca.
+- Esforço: M · Impacto: alto
+- Toca em: `index.js` (ou `src/versoes.js`), `package.json`
+- Riscos: remapear pacotes à mão parte quando o formato muda; `teleport_confirm` deixa de bater certo e o bot não entra. Precisa de teste, e o `auth: offline` dele também merece revisão.
+- Notas: antes de decidir, confirmar com o dono do projecto se o 26.3 é mesmo o alvo ou se basta a última versão que a biblioteca já supporta.
+
 ### I-002 · Vários bots, um por servidor
 
 - Estado: 💡 Nova · Registada: 2026-09-29
@@ -57,7 +76,7 @@
 
 ## 🔍 A avaliar
 
-_(nada)_
+_(as em avaliação estão listadas acima, na secção 💡 Novas, com o estado no cabeçalho)_
 
 ## ✅ Aprovadas
 

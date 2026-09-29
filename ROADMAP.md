@@ -16,11 +16,15 @@ Registados a 2026-09-29 pelo dono do projecto. **Nenhuma fase pode quebrar isto*
 | R2 | Funcionar nas **versões mais recentes do Minecraft** | matriz de versões testada e documentada; nada de fixar a versão no código |
 | R3 | Funcionar com **mods de qualquer loader** (Forge, Fabric, NeoForge) | Fase 4 (sidecar local Via) + `docs/modded.md`; "por testar" é escrito até haver teste |
 
-Mínimo de Node em uso: **14.21.3** (última série do Node com suporte a Windows 7; o Node 16 já não corre lá). Estado verificado em 2026-09-29: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros do projecto compilam com o Node 14.21.3. **Isto não substitui correr o bot com esse Node.**
+Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com suporte oficial a Windows 7). Estado verificado: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros compilam com o Node 14.21.3.
+
+**Atenção — o outro branch usa um caminho diferente.** O branch `Tests` (código do amigo do dono do projecto) funciona em Windows 7 com o **Node 18.20.8 x86** e `NODE_SKIP_PLATFORM_CHECK=1`, com `mineflayer ^4.39.0`. Ou seja: R1 tem duas respostas concorrentes e **nenhuma foi testada com o Mineflayer real**. Decidir qual fica, e com teste, antes de prometer o mínimo.
 
 ---
 
-## Fase 1 · Restaurar a base na raiz · estado: **feito em 2026-09-29** · dona: `organizar-projeto`
+## Fase 1 · Restaurar a base na raiz · estado: **feito em 2026-09-29**
+
+> Esta fase restaurou o código que estava em `old-deprecated-10.1/`. Em 2026-09-29 descobriu-se que existe **outro branch, `Tests`, com uma implementação diferente e mais recente** — ver *Decisões estruturais* e `IDEIAS.md` (I-008). A escolha da base é uma decisão do dono do projecto. · dona: `organizar-projeto`
 
 - **Objectivo**: ter o projeto a funcionar de facto na raiz, com o repositório limpo, antes de mexer em mais nada.
 - **Inclui**: mover `index.js`, `lang/`, `package.json`, `package-lock.json`, `default.json`, `run.cpp`, `LICENSE` e `dependabot.yml` (→ `.github/`) de `old-deprecated-10.1/` para a raiz com `git mv`; decidir o destino de `.replit`/`replit.nix`; escrever o `.gitignore` completo; retirar do índice binários (`run.exe`, `*.msi`), `.idea/`, `logs/` e o `settings.json` antigo; alinhar os READMEs com o que existe mesmo.
@@ -74,7 +78,8 @@ Mínimo de Node em uso: **14.21.3** (última série do Node com suporte a Window
 - **2026-09-29** — A compatibilidade com mods é uma fase própria, não um extra. Motivo: é o objectivo declarado do projecto e tem arquitectura diferente do resto.
 - **2026-09-29** — Restaurar o código para a raiz antes de melhorar seja o que for. Motivo: nada pode ser testado com o código arquivado.
 - **2026-09-29** — Um comando novo implica sempre três alterações (idioma, código, README). Motivo: comando sem texto traduzido ou sem documentar é dívida.
-- **2026-09-29** — Mínimo de Node fixado em **14.21.3** (R1), declarado no `package.json` e verificado automaticamente. Motivo: o Node 14 é a última série que corre em Windows 7, e subir o mínimo fecha a porta a uma parte dos utilizadores.
+- **2026-09-29** — Mínimo de Node fixado em **14.21.3** (R1), declarado no `package.json` e verificado automaticamente. Motivo: o Node 14 é a última série com suporte oficial a Windows 7. **Revisto depois:** o branch `Tests` usa Node 18.20.8 x86 com `NODE_SKIP_PLATFORM_CHECK=1`, e essa via tem de ser testada antes de se decidir.
+- **2026-09-29** — O `package.json` dita a dependência principal do projecto: `mineflayer`, `minecraft-data` (para versões) e o launcher quando existir. Motivo: as dependências transitivas do Mineflayer são o que dá acesso a `prismarine-*`; o resto entra por ser preciso.
 - **2026-09-29** — O roadmap só aponta para o `PROGRESSO.md` e para o `IDEIAS.md`; nunca duplica tarefas. Motivo: dois sítios com a mesma lista divergem.
 - **2026-09-29** — Para servidores com mods ficamos com o **sidecar local Via** (ideia I-001), e não com a documentação de ViaVersion no servidor. Motivo: o utilizador escolheu a opção que não depende do dono do servidor. A documentação de ViaVersion no servidor fica como alternativa a explicar.
 - **2026-09-29** — Nada entra no repositório depois de um commit sem passar por `verificar.mjs`. Motivo: o verificador apanhou duas chaves de idioma em falta e um falso positivo do detector de segredos no caminho — sem ele, iam para o remoto.

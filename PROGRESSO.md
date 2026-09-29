@@ -13,6 +13,9 @@
 - **Nada disto foi testado a correr**: `node index.js` liga-se a servidores reais e não foi executado. `npm install` também não foi corrido.
 - Decidido: compatibilidade com mods faz-se com **sidecar local Via** (ideia I-001 aprovada), a implementar na Fase 4.
 
+- **Existe outro branch, `Tests`**, com uma implementação diferente (ver *Diário*, 2026-09-29). A escolha da base é a decisão mais importante em aberto.
+- **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
+
 ## Em curso
 
 Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios, e um teste a correr contra um servidor a sério.
@@ -21,6 +24,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 - [ ] `npm install` e um teste manual do bot num servidor de testes, com o procedimento registado aqui — `progresso`
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
+- [ ] **Decidir a base**: o branch `Tests` ou este (ideia I-008) — o dono do projecto decide
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
@@ -57,6 +61,23 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-29 (quinta sessão)
+
+**Descoberto — o branch `Tests`**
+- O dono do projecto avisou que o bot do amigo dele está noutro branch e que funciona em vanilla. Fui ver: `origin/Tests`, com commits de hoje.
+- É outra implementação, não uma variante: `package.json` v3.0.0 só com `mineflayer ^4.39.0`, `index.js` próprio e um `start.bat` que usa **Node 18.20.8 x86 com `NODE_SKIP_PLATFORM_CHECK=1`** e `--max-old-space-size=512`.
+- O que o `Tests` tem e nós não: **vários bots** (array `bots`), **movimento anti-AFK** (círculos com saltos, detecção de bloqueio, pausas), **tempo limite de ligação** de 35 s, `auth: offline`, renascer automático ao morrer, `!ping` no chat, e um **patch escrito à mão do `minecraft-data` para o Minecraft 26.3** (remapeia identificadores de pacote e o `teleport_confirm`, e força o carregador de chunks da 1.18).
+- O que nós temos e o `Tests` não: configuração validada, três idiomas, 16 comandos, `/help`, 35 testes, verificação automática, documentação e skills.
+
+**Facto verificado**
+- O `index.js` do `Tests` **arranca**: corrido com o nosso harness (Mineflayer simulado), carrega a configuração, cria o bot com `26.3` e `auth offline`, gera o nome a partir de `botxxxx` (`bot3839`), responde a `/server` e `/pos` e pára a `/stop` sem erro. **Não foi testado contra um servidor real** — como o nosso.
+
+**Risco registado**
+- O `settings.json` do branch `Tests` está versionado com o endereço de um servidor a sério (`*.aternos.me`). Não é copiado para este branch, mas fica no histórico desse branch.
+
+**Por decidir (ideias I-008 e I-009)**
+- Que implementação é a base, e como juntar o que falta de cada uma.
 
 ### 2026-09-29 (quarta sessão)
 
