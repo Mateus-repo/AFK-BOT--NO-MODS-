@@ -7,219 +7,56 @@ const path = require('path');
 const readline = require('readline');
 const { spawn } = require('child_process');
 
+const { createConfig } = require('./src/config');
+const { createI18n } = require('./src/i18n');
+const { createLog } = require('./src/log');
+const { createReconnect } = require('./src/reconnect');
+
 const configPath = path.join(__dirname, 'settings.json');
 const defaultConfigPath = path.join(__dirname, 'default.json');
 
-// Valores de recurso para quando o settings.json não existe ou não pode ser
-// lido. Têm o mesmo formato do default.json.
-const FALLBACK_CONFIG = {
-  server: { ip: '', port: 25565, version: '1.20.4' },
-  'bot-account': { type: 'mojang', username: 'bot_placeholder', password: '' },
-  language: 'eng',
-  maxRam: '1G'
-};
-
-let config = null;
-// Cópia do que está no disco, para escrever uma opção não apagar campos que o
-// utilizador ou uma versão futura do bot acrescentaram.
-let rawConfig = null;
-let bot;
-let messages = {};
-let currentLang = 'eng';
-
-// Função para carregar arquivo de idioma
-function loadLanguage(lang) {
-  const filePath = path.join(__dirname, 'lang', `${lang}.txt`);
-  if (!fs.existsSync(filePath)) {
-    console.log(`[${lang}] ${t('error_lang_load')}`);
-    return false;
-  }
-  const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.split(/\r?\n/);
-  messages = {};
-  for (const line of lines) {
-    if (!line || line.startsWith('#')) continue;
-    const idx = line.indexOf('=');
-    if (idx < 0) continue;
-    const key = line.substring(0, idx).trim();
-    const value = line.substring(idx + 1).trim();
-    messages[key] = value;
-  }
-  return true;
-}
+const log = createLog({ dir: path.join(__dirname, 'logs') }).log;
+const i18n = createI18n({ dir: path.join(__dirname, 'lang') });
 
 // Função de tradução
 function t(key) {
-  return messages[key] || key;
+  return i18n.t(key);
 }
 
-// Formata timestamp para logs
-function formatTimestamp(date) {
-  const YYYY = date.getFullYear();
-  const MM = String(date.getMonth() + 1).padStart(2, '0');
-  const DD = String(date.getDate()).padStart(2, '0');
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  const ss = String(date.getSeconds()).padStart(2, '0');
-  const mmm = String(date.getMilliseconds()).padStart(3, '0');
-  return `[${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss}.${mmm}]`;
-}
+const configStore = createConfig({
+  configPath,
+  defaultConfigPath,
+  log,
+  t
+});
 
-// Configurando o log
-const logsDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir);
-}
-const logStream = fs.createWriteStream(path.join(logsDir, 'latest.log'), { flags: 'a' });
-function log(text, type = 'INFO') {
-  const timestamp = formatTimestamp(new Date());
-  const line = `${timestamp} [${type}] ${text}\n`;
-  logStream.write(line);
-  console.log(line.trim());
+// A configuração viva. configStore.read() é quem a preenche; os comandos
+// escrevem com config = configStore.save(...), que a volta a ler — daí a
+// atribuição: sem ela, o bot voltaria a ligar-se com os valores antigos.
+let config = null;
+
+const RECONNECT = createReconnect({
+  log,
+  t,
+  aoTentar: () => createBot()
+});
+
+let bot;
+let currentLang = 'eng';
+
+// Carrega um idioma; devolve false se o ficheiro não existir
+function loadLanguage(lang) {
+  if (i18n.load(lang)) {
+    return true;
+  }
+  console.log(`[${lang}] ${t('error_lang_load')}`);
+  return false;
 }
 
 // Carrega idioma inicial
 if (!loadLanguage(currentLang)) {
   currentLang = 'eng';
   loadLanguage(currentLang);
-}
-
-// ---------------------------------------------------------------- configuração
-
-/** Valores por omissão vindos do default.json (ou dos internos). */
-function readDefaultConfig() {
-  try {
-    const base = JSON.parse(fs.readFileSync(defaultConfigPath, 'utf8'));
-    return {
-      ...FALLBACK_CONFIG,
-      ...base,
-      server: { ...FALLBACK_CONFIG.server, ...(base.server || {}) },
-      'bot-account': { ...FALLBACK_CONFIG['bot-account'], ...(base['bot-account'] || {}) }
-    };
-  } catch {
-    return FALLBACK_CONFIG;
-  }
-}
-
-function isPlainObject(value) {
-  return !!value && typeof value === 'object' && !Array.isArray(value)
-}
-
-/**
- * Lê o settings.json e completa o que falta com o default.json.
- * Nunca lança: o bot arranca sempre com alguma coisa e avisa do que está errado.
- */
-function configRead() {
-  let fromDisk = {};
-  let estado = null;
-
-  try {
-    const bruto = fs.readFileSync(configPath, 'utf8');
-    fromDisk = JSON.parse(bruto);
-    if (!isPlainObject(fromDisk)) {
-      fromDisk = {};
-      estado = 'config_not_object';
-    }
-  } catch (err) {
-    fromDisk = {};
-    estado = err.code === 'ENOENT' ? 'config_missing' : 'config_unreadable';
-    if (estado === 'config_unreadable') {
-      log(`${t('config_unreadable')} ${err.message}`, 'ERROR');
-    }
-  }
-
-  const base = readDefaultConfig();
-  const final = {
-    ...base,
-    ...fromDisk,
-    server: { ...base.server, ...(fromDisk.server || {}) },
-    'bot-account': { ...base['bot-account'], ...(fromDisk['bot-account'] || {}) }
-  };
-
-  if (final.server) {
-    const port = parseInt(final.server.port, 10);
-    final.server.port = Number.isInteger(port) && port > 0 && port <= 65535 ? port : base.server.port;
-    final.server.version = String(final.server.version || base.server.version);
-  }
-  if (final['bot-account'] && !['mojang', 'microsoft'].includes(final['bot-account'].type)) {
-    final['bot-account'].type = 'mojang';
-  }
-
-  if (estado === 'config_missing' || estado === 'config_not_object') {
-    log(t(estado), 'WARN');
-  } else if (!fromDisk.server || !fromDisk['bot-account']) {
-    log(t('config_filled'), 'WARN');
-  }
-
-  rawConfig = fromDisk;
-  return final
-}
-
-/** Junta alterações a um objecto sem perder o que já lá estava. */
-function deepMerge(base, updates) {
-  const resultado = isPlainObject(base) ? { ...base } : {};
-  for (const [chave, valor] of Object.entries(updates || {})) {
-    resultado[chave] = isPlainObject(valor) ? deepMerge(resultado[chave], valor) : valor;
-  }
-  return resultado
-}
-
-/**
- * Grava alterações na configuração preservando os campos que o bot não conhece.
- */
-function configSave(updates) {
-  const merged = deepMerge(rawConfig || {}, updates);
-  fs.writeFileSync(configPath, JSON.stringify(merged, null, 2));
-  rawConfig = merged;
-  config = configRead();
-  return merged
-}
-
-// ------------------------------------------------------------------ reconexão
-
-const RECONNECT = {
-  ativo: false,
-  tentativa: 0,
-  maxTentativas: 10,
-  atrasoMinimo: 1000,
-  atrasoMaximo: 60000,
-  temporizador: null
-};
-
-function clearReconnect() {
-  if (RECONNECT.temporizador) {
-    clearTimeout(RECONNECT.temporizador);
-    RECONNECT.temporizador = null;
-  }
-}
-
-/** Mudança deliberada: o bot não se deve ligar sozinho a seguir. */
-function semReconexao() {
-  RECONNECT.ativo = false;
-  clearReconnect();
-}
-
-/** Tenta ligar-se outra vez, com recuo exponencial até RECONNECT.atrasoMaximo. */
-function scheduleReconnect(motivo) {
-  if (!RECONNECT.ativo) return;
-  if (RECONNECT.tentativa >= RECONNECT.maxTentativas) {
-    log(t('reconnect_give_up'), 'ERROR');
-    return;
-  }
-  RECONNECT.tentativa += 1;
-  const atraso = Math.min(
-    RECONNECT.atrasoMinimo * Math.pow(2, RECONNECT.tentativa - 1),
-    RECONNECT.atrasoMaximo
-  );
-  const segundos = Math.round(atraso / 1000);
-  log(
-    `${t('reconnect_wait')} ${segundos}s (motivo: ${motivo}, tentativa ${RECONNECT.tentativa}/${RECONNECT.maxTentativas})`,
-    'WARN'
-  );
-  RECONNECT.temporizador = setTimeout(() => {
-    RECONNECT.temporizador = null;
-    createBot();
-  }, atraso);
 }
 
 // Gera nome aleatório do formato bot_<6chars>
@@ -238,7 +75,7 @@ function ensureBotName() {
   if (!username.startsWith('bot_')) {
     const newName = getRandomBotName();
     try {
-      configSave({ 'bot-account': { username: newName } });
+      config = configStore.save({ 'bot-account': { username: newName } });
       console.log(`${t('cmd_changename')} ${newName}`);
     } catch (err) {
       console.log(`${t('error_generic')} ${err}`);
@@ -257,7 +94,7 @@ function promptServerSetup(callback) {
     }
     const parts = val.split(':');
     try {
-      configSave({
+      config = configStore.save({
         server: { ip: parts[0], port: parts[1] ? parseInt(parts[1], 10) : 25565 }
       });
       console.log(`${t('cmd_changeserver')} ${config.server.ip}:${config.server.port}`);
@@ -281,7 +118,7 @@ function reloadScript() {
 
 // Cria e conecta o bot
 function createBot() {
-  clearReconnect();
+  RECONNECT.clear();
   const authType = config['bot-account']['type'];
   const username = config['bot-account']['username'];
   const password = config['bot-account']['password'] || undefined;
@@ -301,7 +138,7 @@ function createBot() {
   });
 
   bot.on('spawn', () => {
-    RECONNECT.tentativa = 0;
+    RECONNECT.reset();
     log(t('bot_has_arrived'));
   });
 
@@ -315,7 +152,7 @@ function createBot() {
 
   bot.on('end', () => {
     log(t('connection_closed'), 'WARN');
-    scheduleReconnect(t('connection_closed'));
+    RECONNECT.agendar(t('connection_closed'));
   });
 }
 
@@ -350,11 +187,11 @@ function changeServer(newServer) {
   const ipPart = parts[0];
   const portPart = parts[1];
   try {
-    configSave({
+    config = configStore.save({
       server: { ip: ipPart, port: portPart ? parseInt(portPart, 10) : 25565 }
     });
     console.log(`${t('cmd_changeserver')} ${config.server.ip}:${config.server.port}`);
-    semReconexao();
+    RECONNECT.desativar();
     if (bot) bot.quit('Server changed');
     createBot();
   } catch (err) {
@@ -368,9 +205,9 @@ function changeName(newName) {
     return;
   }
   try {
-    configSave({ 'bot-account': { username: newName } });
+    config = configStore.save({ 'bot-account': { username: newName } });
     console.log(`${t('cmd_changename')} ${newName}`);
-    semReconexao();
+    RECONNECT.desativar();
     if (bot) bot.quit('Name changed');
     createBot();
   } catch (err) {
@@ -418,9 +255,9 @@ function changeVersion(newVersion) {
     return;
   }
   try {
-    configSave({ server: { version: newVersion } });
+    config = configStore.save({ server: { version: newVersion } });
     console.log(`${t('cmd_version')} ${newVersion}`);
-    semReconexao();
+    RECONNECT.desativar();
     if (bot) bot.quit('Version changed');
     createBot();
   } catch (err) {
@@ -437,7 +274,7 @@ function changeLanguage(newLang) {
     return;
   }
   try {
-    configSave({ language: newLang });
+    config = configStore.save({ language: newLang });
     console.log(`${t('lang_changed')} ${newLang}`);
     rl.prompt();
   } catch (err) {
@@ -447,7 +284,7 @@ function changeLanguage(newLang) {
 
 function stopBot() {
   // Uma paragem propositada não deve ligar-se outra vez
-  semReconexao();
+  RECONNECT.desativar();
   if (bot) bot.quit('Shutting down');
   process.exit(0);
 }
@@ -462,7 +299,7 @@ function defaultConfig() {
       fs.copyFileSync(configPath, configPath + '.bak');
     }
     fs.copyFileSync(defaultConfigPath, configPath);
-    config = configRead();
+    config = configStore.read();
     console.log(t('cmd_default'));
     ensureBotName();
     if (!config.server.ip) {
@@ -487,7 +324,7 @@ function changeType(newType) {
     return;
   }
   try {
-    configSave({ 'bot-account': { type: newType } });
+    config = configStore.save({ 'bot-account': { type: newType } });
   } catch (err) {
     console.log(`${t('error_generic')} ${err}`);
     return;
@@ -504,7 +341,7 @@ function changeType(newType) {
             return;
           }
           try {
-            configSave({ 'bot-account': { username: email } });
+            config = configStore.save({ 'bot-account': { username: email } });
             console.log(t('email_saved'));
           } catch (err) {
             console.log(`${t('error_generic')} ${err}`);
@@ -531,7 +368,7 @@ function changeType(newType) {
           return;
         }
         try {
-          configSave({ 'bot-account': { username: email } });
+          config = configStore.save({ 'bot-account': { username: email } });
           console.log(t('email_saved'));
         } catch (err) {
           console.log(`${t('error_generic')} ${err}`);
@@ -588,8 +425,8 @@ const rl = readline.createInterface({
 
 // Antes de criar o bot, verificar servidor e nome
 function init() {
-  RECONNECT.ativo = true;
-  config = configRead();
+  RECONNECT.ativar();
+  config = configStore.read();
   if (config.language && config.language !== currentLang) {
     currentLang = config.language;
     if (!loadLanguage(currentLang)) {
