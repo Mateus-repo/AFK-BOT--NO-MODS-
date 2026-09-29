@@ -201,6 +201,7 @@ class BotSession {
     this.afkPhase = 'stopped';
     this.currentYaw = 0;
     this.reconnectTimer = null;
+    this.connectTimeoutTimer = null;
     this.reconnectAttempts = 0;
     this.shouldRun = true;
     this.status = 'disconnected';
@@ -211,11 +212,8 @@ class BotSession {
     if (/[xX]/.test(template)) {
       return template.replace(/[xX]/g, () => Math.floor(Math.random() * 10));
     }
-    if (this.reconnectAttempts > 0) {
-      const suffix = Math.floor(1000 + Math.random() * 9000);
-      return `${template.slice(0, 11)}_${suffix}`;
-    }
-    return template;
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    return `${template.slice(0, 10)}_${suffix}`;
   }
 
   start() {
@@ -225,23 +223,56 @@ class BotSession {
 
   stop() {
     this.shouldRun = false;
-    this.clearTimers();
-    if (this.instance) {
-      this.status = 'stopping';
-      try {
-        this.instance.quit();
-      } catch {}
-      this.instance = null;
-    }
-    this.status = 'stopped';
-  }
-
-  clearTimers() {
-    this.stopAfkMovement();
+    this.cleanupCurrentInstance();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+    this.status = 'stopped';
+  }
+
+  cleanupCurrentInstance() {
+    this.stopAfkMovement();
+    if (this.connectTimeoutTimer) {
+      clearTimeout(this.connectTimeoutTimer);
+      this.connectTimeoutTimer = null;
+    }
+    if (this.instance) {
+      const oldBot = this.instance;
+      this.instance = null;
+      try {
+        oldBot.removeAllListeners();
+        oldBot.on('error', () => {});
+        oldBot.quit();
+      } catch {}
+      try {
+        if (oldBot._client) {
+          oldBot._client.removeAllListeners();
+          oldBot._client.on('error', () => {});
+          oldBot._client.end();
+          if (oldBot._client.socket) {
+            oldBot._client.socket.destroy();
+          }
+        }
+      } catch {}
+    }
+  }
+
+  clearTimers() {
+    this.cleanupCurrentInstance();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
+  handleDisconnect(reason, trigger = 'desconhecido') {
+    if (!this.shouldRun) return;
+    if (this.status === 'disconnected' || this.status === 'reconnecting') return;
+    this.status = 'disconnected';
+    console.log(`[${this.username}] Conexao terminada (${trigger}: ${reason || 'desconectado'}).`);
+    this.cleanupCurrentInstance();
+    this.scheduleReconnect();
   }
 
   connect() {
@@ -264,27 +295,40 @@ class BotSession {
 
     console.log(`[${this.username}] A ligar a ${botOptions.host}:${botOptions.port} (versao: ${botOptions.version || 'auto'})...`);
 
+    // Temporizador de seguranca caso o servidor nao responda ou fique preso no handshake
+    this.connectTimeoutTimer = setTimeout(() => {
+      if (this.status === 'connecting' || this.status === 'logged_in') {
+        console.log(`[${this.username}] Tempo limite de conexao esgotado (35s). A reiniciar tentativa...`);
+        this.handleDisconnect('tempo limite esgotado', 'timeout');
+      }
+    }, 35000);
+
     try {
       this.instance = mineflayer.createBot(botOptions);
-      this.attachEvents();
+      this.attachEvents(this.instance);
     } catch (err) {
       console.log(`[${this.username}] Falha ao criar instancia: ${err.message}`);
-      this.scheduleReconnect();
+      this.handleDisconnect(err.message, 'erro_inicializacao');
     }
   }
 
-  attachEvents() {
-    const bot = this.instance;
-
+  attachEvents(bot) {
     bot.once('login', () => {
+      if (this.instance !== bot) return;
       this.status = 'logged_in';
       console.log(`[${this.username}] Sessao iniciada no servidor.`);
     });
 
     bot.once('spawn', () => {
+      if (this.instance !== bot) return;
       this.status = 'spawned';
       this.reconnectAttempts = 0;
+      if (this.connectTimeoutTimer) {
+        clearTimeout(this.connectTimeoutTimer);
+        this.connectTimeoutTimer = null;
+      }
       setTimeout(() => {
+        if (this.instance !== bot) return;
         if (bot.entity?.position) {
           this.spawnPosition = bot.entity.position.clone();
           console.log(`[${this.username}] Entrou no mundo nas coordenadas: ${this.formatCoords(this.spawnPosition)}`);
@@ -294,15 +338,18 @@ class BotSession {
     });
 
     bot.on('forcedMove', () => {
+      if (this.instance !== bot) return;
       if (!this.spawnPosition || this.spawnPosition.distanceTo(bot.entity.position) > 20) {
         this.spawnPosition = bot.entity.position.clone();
       }
     });
 
     bot.on('death', () => {
+      if (this.instance !== bot) return;
       this.stopAfkMovement();
       console.log(`[${this.username}] O bot morreu. A renascer automaticamente...`);
       setTimeout(() => {
+        if (this.instance !== bot) return;
         try {
           bot.respawn();
         } catch {}
@@ -310,6 +357,7 @@ class BotSession {
     });
 
     bot.on('chat', (sender, message) => {
+      if (this.instance !== bot) return;
       if (sender === this.username) return;
       if (message.startsWith('!ping')) {
         bot.chat('pong');
@@ -317,6 +365,7 @@ class BotSession {
     });
 
     bot.on('kicked', (reason) => {
+      if (this.instance !== bot) return;
       let parsed = reason;
       try {
         if (typeof reason === 'string') {
@@ -326,23 +375,24 @@ class BotSession {
           parsed = reason.text || reason.value || reason.translate || JSON.stringify(reason);
         }
       } catch {}
-      console.log(`[${this.username}] Expulso do servidor: ${typeof parsed === 'object' ? JSON.stringify(parsed) : parsed}`);
+      const reasonStr = typeof parsed === 'object' ? JSON.stringify(parsed) : String(parsed);
+      console.log(`[${this.username}] Expulso do servidor: ${reasonStr}`);
+      this.handleDisconnect(reasonStr, 'expulso');
     });
 
     bot.on('error', (err) => {
+      if (this.instance !== bot) return;
       if (err.code === 'ECONNREFUSED') {
-        console.log(`[${this.username}] Conexao recusada em ${this.config.server.ip}:${this.config.server.port}`);
+        console.log(`[${this.username}] Servidor offline ou conexao recusada em ${this.config.server.ip}:${this.config.server.port}`);
       } else {
         console.log(`[${this.username}] Erro de rede: ${err.message}`);
       }
+      this.handleDisconnect(err.message, 'erro_rede');
     });
 
     bot.on('end', (reason) => {
-      this.status = 'disconnected';
-      this.clearTimers();
-      this.instance = null;
-      console.log(`[${this.username}] Conexao terminada (${reason || 'desconectado'}).`);
-      this.scheduleReconnect();
+      if (this.instance !== bot) return;
+      this.handleDisconnect(reason || 'socketClosed', 'socket');
     });
 
     this.patchTeleportConfirm(bot);
@@ -503,14 +553,20 @@ class BotSession {
 
   scheduleReconnect() {
     if (!this.shouldRun || !this.config.reconnect.enabled) return;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
 
+    this.status = 'reconnecting';
     this.reconnectAttempts++;
-    const base = this.config.reconnect.initialDelaySeconds;
-    const max = this.config.reconnect.maxDelaySeconds;
-    const delay = Math.min(base * Math.pow(1.5, this.reconnectAttempts - 1), max);
+    const base = this.config.reconnect.initialDelaySeconds || 5;
+    const max = this.config.reconnect.maxDelaySeconds || 60;
+    const delay = Math.min(base * Math.pow(1.3, this.reconnectAttempts - 1), max);
 
     console.log(`[${this.username}] A reconectar em ${Math.round(delay)} segundos (tentativa ${this.reconnectAttempts})...`);
     this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       this.connect();
     }, delay * 1000);
   }
@@ -652,3 +708,5 @@ rl.on('line', (line) => {
   }
 });
 }
+
+module.exports = { BotSession, BotManager, loadSettings };
