@@ -6,34 +6,92 @@ function setupMinecraft263Compat() {
   const minecraftData = require('minecraft-data');
   const data = require('minecraft-data/data.js');
 
-  if (!data.pc['26.3'] && data.pc['26.1']) {
-    const base = JSON.parse(JSON.stringify(data.pc['26.1']));
+  const v263 = {
+    minecraftVersion: '26.3',
+    version: 777,
+    dataVersion: 5023,
+    usesNetty: true,
+    majorVersion: '26.3',
+    releaseType: 'release'
+  };
 
-    if (base.protocol?.play?.toServer?.types) {
-      base.protocol.play.toServer.types.packet_teleport_confirm = [
-        'container',
-        [
-          { name: 'teleportId', type: 'varint' },
-          { name: 'x', type: 'f64' },
-          { name: 'y', type: 'f64' },
-          { name: 'z', type: 'f64' },
-          { name: 'yRot', type: 'f32' },
-          { name: 'xRot', type: 'f32' }
-        ]
-      ];
+  if (!data.pc['26.3'] && data.pc['26.1']) {
+    const proto = JSON.parse(JSON.stringify(data.pc['26.1'].protocol));
+
+    proto.configuration.toClient.types.packet[1][0].type[1].mappings = {
+      '0x00': 'cookie_request',
+      '0x01': 'custom_payload',
+      '0x02': 'disconnect',
+      '0x03': 'finish_configuration',
+      '0x04': 'keep_alive',
+      '0x05': 'ping',
+      '0x06': 'reset_chat',
+      '0x07': 'registry_data',
+      '0x08': 'remove_resource_pack',
+      '0x09': 'add_resource_pack',
+      '0x0a': 'store_cookie',
+      '0x0b': 'transfer',
+      '0x0c': 'unknown_0x0c',
+      '0x0d': 'feature_flags',
+      '0x0e': 'tags',
+      '0x0f': 'select_known_packs',
+      '0x10': 'custom_report_details',
+      '0x11': 'server_links',
+      '0x12': 'clear_dialog',
+      '0x13': 'show_dialog',
+      '0x14': 'code_of_conduct'
+    };
+    proto.configuration.toClient.types.packet_unknown_0x0c = ['container', []];
+
+    const m261 = proto.play.toClient.types.packet[1][0].type[1].mappings;
+    const m263 = {};
+    for (const [k, name] of Object.entries(m261)) {
+      const num = parseInt(k, 16);
+      let shifted;
+      if (num <= 0x22) {
+        shifted = num;
+      } else if (num <= 0x5d) {
+        shifted = num + 1;
+      } else if (num <= 0x77) {
+        shifted = num + 2;
+      } else {
+        shifted = num + 3;
+      }
+      const hex = '0x' + shifted.toString(16).padStart(2, '0');
+      m263[hex] = name;
     }
+    m263['0x23'] = 'unknown_0x23';
+    m263['0x5f'] = 'unknown_0x5f';
+    m263['0x7a'] = 'unknown_0x7a';
+    m263['0x7b'] = 'unknown_0x7b';
+    proto.play.toClient.types.packet_unknown_0x23 = ['container', []];
+    proto.play.toClient.types.packet_unknown_0x5f = ['container', []];
+    proto.play.toClient.types.packet_unknown_0x7a = ['container', []];
+    proto.play.toClient.types.packet_unknown_0x7b = ['container', []];
+    proto.play.toClient.types.packet[1][0].type[1].mappings = m263;
+
+    proto.play.toServer.types.packet_teleport_confirm = [
+      'container',
+      [
+        { name: 'teleportId', type: 'varint' },
+        { name: 'x', type: 'f64' },
+        { name: 'y', type: 'f64' },
+        { name: 'z', type: 'f64' },
+        { name: 'yRot', type: 'f32' },
+        { name: 'xRot', type: 'f32' }
+      ]
+    ];
 
     data.pc['26.3'] = {
-      ...base,
-      version: {
-        minecraftVersion: '26.3',
-        version: 777,
-        dataVersion: 5023,
-        usesNetty: true,
-        majorVersion: '26.3',
-        releaseType: 'release'
-      }
+      ...data.pc['26.1'],
+      protocol: proto
     };
+
+    Object.defineProperty(data.pc['26.3'], 'version', {
+      get: () => v263,
+      enumerable: true,
+      configurable: true
+    });
   }
 
   if (!minecraftData.supportedVersions.pc.includes('26.3')) {
@@ -67,6 +125,14 @@ function setupMinecraft263Compat() {
 
     Object.assign(patchedChunkLoader, originalChunkLoader);
     require.cache[chunkPath].exports = patchedChunkLoader;
+
+    const ChunkColumn = require('prismarine-chunk/src/pc/1.18/ChunkColumn');
+    const origLoadParsedLight = ChunkColumn.prototype.loadParsedLight;
+    ChunkColumn.prototype.loadParsedLight = function (skyLight, blockLight, skyLightMask, blockLightMask, emptySkyLightMask, emptyBlockLightMask) {
+      try {
+        return origLoadParsedLight.call(this, skyLight, blockLight, skyLightMask, blockLightMask, emptySkyLightMask, emptyBlockLightMask);
+      } catch {}
+    };
   } catch {}
 
   try {
@@ -109,9 +175,9 @@ function loadSettings() {
 
   const movement = {
     enabled: parsed.movement?.enabled !== false,
-    intervalSeconds: Number(parsed.movement?.intervalSeconds) || 20,
-    actionDurationMs: Number(parsed.movement?.actionDurationMs) || 800,
-    radius: Number(parsed.movement?.radius) || 3
+    activeDurationSeconds: Number(parsed.movement?.activeDurationSeconds) || 180,
+    pauseDurationSeconds: Number(parsed.movement?.pauseDurationSeconds) || 30,
+    radius: Number(parsed.movement?.radius) || 4
   };
 
   const reconnect = {
@@ -125,15 +191,31 @@ function loadSettings() {
 
 class BotSession {
   constructor(username, config) {
-    this.username = username;
+    this.usernameTemplate = username || 'botxxxx';
+    this.username = this.generateNickname();
     this.config = config;
     this.instance = null;
     this.spawnPosition = null;
-    this.movementTimer = null;
+    this.movementTickListener = null;
+    this.phaseTimer = null;
+    this.afkPhase = 'stopped';
+    this.currentYaw = 0;
     this.reconnectTimer = null;
     this.reconnectAttempts = 0;
     this.shouldRun = true;
     this.status = 'disconnected';
+  }
+
+  generateNickname() {
+    const template = this.usernameTemplate || 'botxxxx';
+    if (/[xX]/.test(template)) {
+      return template.replace(/[xX]/g, () => Math.floor(Math.random() * 10));
+    }
+    if (this.reconnectAttempts > 0) {
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      return `${template.slice(0, 11)}_${suffix}`;
+    }
+    return template;
   }
 
   start() {
@@ -155,10 +237,7 @@ class BotSession {
   }
 
   clearTimers() {
-    if (this.movementTimer) {
-      clearInterval(this.movementTimer);
-      this.movementTimer = null;
-    }
+    this.stopAfkMovement();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -169,6 +248,7 @@ class BotSession {
     if (!this.shouldRun) return;
     this.clearTimers();
     this.status = 'connecting';
+    this.username = this.generateNickname();
 
     const botOptions = {
       host: this.config.server.ip,
@@ -204,12 +284,23 @@ class BotSession {
     bot.once('spawn', () => {
       this.status = 'spawned';
       this.reconnectAttempts = 0;
-      this.spawnPosition = bot.entity.position.clone();
-      console.log(`[${this.username}] Entrou no mundo nas coordenadas: ${this.formatCoords(this.spawnPosition)}`);
-      this.startAfkMovement();
+      setTimeout(() => {
+        if (bot.entity?.position) {
+          this.spawnPosition = bot.entity.position.clone();
+          console.log(`[${this.username}] Entrou no mundo nas coordenadas: ${this.formatCoords(this.spawnPosition)}`);
+          this.startAfkMovement();
+        }
+      }, 1500);
+    });
+
+    bot.on('forcedMove', () => {
+      if (!this.spawnPosition || this.spawnPosition.distanceTo(bot.entity.position) > 20) {
+        this.spawnPosition = bot.entity.position.clone();
+      }
     });
 
     bot.on('death', () => {
+      this.stopAfkMovement();
       console.log(`[${this.username}] O bot morreu. A renascer automaticamente...`);
       setTimeout(() => {
         try {
@@ -228,10 +319,14 @@ class BotSession {
     bot.on('kicked', (reason) => {
       let parsed = reason;
       try {
-        const json = JSON.parse(reason);
-        parsed = json.text || json.extra?.map(e => e.text).join('') || reason;
+        if (typeof reason === 'string') {
+          const json = JSON.parse(reason);
+          parsed = json.text || json.extra?.map(e => e.text).join('') || reason;
+        } else if (typeof reason === 'object') {
+          parsed = reason.text || reason.value || reason.translate || JSON.stringify(reason);
+        }
       } catch {}
-      console.log(`[${this.username}] Expulso do servidor: ${parsed}`);
+      console.log(`[${this.username}] Expulso do servidor: ${typeof parsed === 'object' ? JSON.stringify(parsed) : parsed}`);
     });
 
     bot.on('error', (err) => {
@@ -259,12 +354,13 @@ class BotSession {
 
     bot._client.write = (packetName, params) => {
       if (packetName === 'teleport_confirm' && params && typeof params === 'object') {
-        if (params.x === undefined && bot.entity?.position) {
-          params.x = bot.entity.position.x;
-          params.y = bot.entity.position.y;
-          params.z = bot.entity.position.z;
-          params.yRot = bot.entity.yaw || 0;
-          params.xRot = bot.entity.pitch || 0;
+        if (params.x === undefined) {
+          const pos = bot.entity?.position || { x: 0, y: 0, z: 0 };
+          params.x = pos.x;
+          params.y = pos.y;
+          params.z = pos.z;
+          params.yRot = params.yRot || 0;
+          params.xRot = params.xRot || 0;
         }
       }
       return originalWrite(packetName, params);
@@ -273,57 +369,136 @@ class BotSession {
 
   startAfkMovement() {
     if (!this.config.movement.enabled) return;
+    this.stopAfkMovement();
 
-    this.movementTimer = setInterval(() => {
-      if (this.status !== 'spawned' || !this.instance?.entity) return;
-      this.executeAfkAction();
-    }, this.config.movement.intervalSeconds * 1000);
+    this.afkPhase = 'moving';
+    const activeSec = this.config.movement.activeDurationSeconds || 180;
+    const R = this.config.movement.radius || 1.2;
+    console.log(`[${this.username}] Ciclo anti-AFK iniciado: a andar em circulo de raio ${R}m e a saltar continuamente (${activeSec}s ativo)...`);
+
+    let center = null;
+    if (this.config.movement.fixedCenter && typeof this.config.movement.fixedCenter.x === 'number') {
+      const fc = this.config.movement.fixedCenter;
+      center = new (require('vec3'))(fc.x, fc.y || 134, fc.z);
+    } else if (this.spawnPosition) {
+      center = this.spawnPosition.clone();
+    }
+
+    const LOOK_AHEAD_ANGLE = Math.PI / 3; // 60 graus a frente na circunferencia
+    let direction = 1; // 1 = sentido horario, -1 = anti-horario
+    let lastPos = null;
+    let stuckTicks = 0;
+    let stuckCount = 0;
+
+    this.movementTickListener = () => {
+      const bot = this.instance;
+      if (!bot || this.status !== 'spawned' || !bot.entity?.position) return;
+
+      if (this.afkPhase === 'moving') {
+        bot.setControlState('forward', true);
+        bot.setControlState('jump', true);
+
+        const current = bot.entity.position;
+        if (!center) center = current.clone();
+        if (!lastPos) lastPos = current.clone();
+
+        // 1. Detecao de bloqueio por obstaculo
+        const distMoved = Math.hypot(current.x - lastPos.x, current.z - lastPos.z);
+        lastPos = current.clone();
+
+        if (distMoved < 0.02) {
+          stuckTicks++;
+          if (stuckTicks >= 12) { // 600ms bloqueado
+            stuckTicks = 0;
+            stuckCount++;
+            if (stuckCount >= 2 && !this.config.movement.fixedCenter) {
+              center = current.clone();
+              direction = Math.random() < 0.5 ? 1 : -1;
+              stuckCount = 0;
+            } else {
+              direction *= -1; // Inverte o sentido de rotacao para contornar obstaculo
+            }
+          }
+        } else {
+          if (stuckTicks > 0) stuckTicks--;
+          if (distMoved > 0.05) stuckCount = 0;
+        }
+
+        // 2. Adaptacao de elevacao se mudar de patamar
+        if (bot.entity.onGround && Math.abs(current.y - center.y) > 1.2 && !this.config.movement.fixedCenter) {
+          center = current.clone();
+        }
+
+        // 3. Calculo do ponto alvo no perimetro do circulo
+        const dx = current.x - center.x;
+        const dz = current.z - center.z;
+        const currentAngle = Math.atan2(dz, dx);
+        const targetAngle = currentAngle + direction * LOOK_AHEAD_ANGLE;
+        const targetX = center.x + R * Math.cos(targetAngle);
+        const targetZ = center.z + R * Math.sin(targetAngle);
+
+        // 4. Orientacao suave em direcao ao ponto alvo
+        const toTargetX = targetX - current.x;
+        const toTargetZ = targetZ - current.z;
+        const desiredYaw = Math.atan2(-toTargetX, -toTargetZ);
+
+        let diff = (desiredYaw - bot.entity.yaw) % (Math.PI * 2);
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        const newYaw = bot.entity.yaw + diff * 0.4;
+
+        bot.look(newYaw, 0, true);
+      } else if (this.afkPhase === 'paused') {
+        bot.clearControlStates();
+      }
+    };
+
+    this.instance.on('physicsTick', this.movementTickListener);
+    this.scheduleNextAfkPhase();
   }
 
-  executeAfkAction() {
-    const bot = this.instance;
-    const current = bot.entity.position;
-    const spawn = this.spawnPosition;
+  scheduleNextAfkPhase() {
+    if (this.phaseTimer) clearTimeout(this.phaseTimer);
 
-    if (spawn && current.distanceTo(spawn) > this.config.movement.radius) {
-      const dx = spawn.x - current.x;
-      const dz = spawn.z - current.z;
-      const yaw = Math.atan2(-dx, -dz);
-      bot.look(yaw, 0, true);
-      bot.setControlState('forward', true);
-
-      setTimeout(() => {
+    if (this.afkPhase === 'moving') {
+      const activeMs = (this.config.movement.activeDurationSeconds || 180) * 1000;
+      this.phaseTimer = setTimeout(() => {
+        if (this.status !== 'spawned' || !this.instance) return;
+        this.afkPhase = 'paused';
         if (this.instance) {
           this.instance.clearControlStates();
         }
-      }, this.config.movement.actionDurationMs);
-      return;
+        const pauseSec = this.config.movement.pauseDurationSeconds || 30;
+        console.log(`[${this.username}] Pausa anti-AFK: parado durante ${pauseSec} segundos...`);
+        this.scheduleNextAfkPhase();
+      }, activeMs);
+    } else if (this.afkPhase === 'paused') {
+      const pauseMs = (this.config.movement.pauseDurationSeconds || 30) * 1000;
+      this.phaseTimer = setTimeout(() => {
+        if (this.status !== 'spawned' || !this.instance) return;
+        this.afkPhase = 'moving';
+        const activeSec = this.config.movement.activeDurationSeconds || 180;
+        console.log(`[${this.username}] A retomar ciclo anti-AFK: a andar em circulos e a saltar continuamente (${activeSec}s ativo)...`);
+        this.scheduleNextAfkPhase();
+      }, pauseMs);
     }
+  }
 
-    const actions = ['jump', 'forward', 'back', 'left', 'right', 'sneak', 'look'];
-    const selected = actions[Math.floor(Math.random() * actions.length)];
-
-    if (selected === 'look') {
-      const yaw = (Math.random() * Math.PI * 2) - Math.PI;
-      const pitch = (Math.random() * 0.6) - 0.3;
-      bot.look(yaw, pitch, false);
-      return;
+  stopAfkMovement() {
+    if (this.phaseTimer) {
+      clearTimeout(this.phaseTimer);
+      this.phaseTimer = null;
     }
-
-    if (selected === 'jump') {
-      bot.setControlState('jump', true);
-      setTimeout(() => {
-        if (this.instance) this.instance.setControlState('jump', false);
-      }, 350);
-      return;
+    if (this.movementTickListener && this.instance) {
+      this.instance.removeListener('physicsTick', this.movementTickListener);
+      this.movementTickListener = null;
     }
-
-    bot.setControlState(selected, true);
-    setTimeout(() => {
-      if (this.instance) {
-        this.instance.setControlState(selected, false);
-      }
-    }, this.config.movement.actionDurationMs);
+    if (this.instance) {
+      try {
+        this.instance.clearControlStates();
+      } catch {}
+    }
+    this.afkPhase = 'stopped';
   }
 
   scheduleReconnect() {
@@ -408,8 +583,9 @@ class BotManager {
   }
 }
 
-const manager = new BotManager();
-manager.start();
+if (require.main === module) {
+  const manager = new BotManager();
+  manager.start();
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -475,3 +651,4 @@ rl.on('line', (line) => {
       break;
   }
 });
+}

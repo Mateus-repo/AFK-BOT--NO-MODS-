@@ -46,7 +46,7 @@ Edite o ficheiro `settings.json` com os dados pretendidos:
   },
   "bots": [
     {
-      "username": "AFK_Bot"
+      "username": "botxxxx"
     }
   ],
   "movement": {
@@ -69,7 +69,7 @@ Edite o ficheiro `settings.json` com os dados pretendidos:
 - `server.ip`: Endereco IP ou dominio do servidor.
 - `server.port`: Porta do servidor (padrao: 25565).
 - `server.version`: Versao do protocolo pretendida (exemplo: "26.3").
-- `bots`: Lista de contas offline a ligar.
+- `bots`: Lista de contas offline a ligar. Se o nome contiver "x" ou "X" (ex: "botxxxx"), cada letra e substituida por um digito aleatorio a cada tentativa de ligacao ou reconexao, evitando bloqueios de nick.
 - `movement.enabled`: Ativa ou desativa a movimentacao anti-AFK.
 - `movement.radius`: Distancia maxima em blocos a partir do ponto de entrada.
 - `reconnect.enabled`: Ativa a reconexao automatica em caso de queda de rede.

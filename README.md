@@ -46,7 +46,7 @@ Edit `settings.json` according to your needs:
   },
   "bots": [
     {
-      "username": "AFK_Bot"
+      "username": "botxxxx"
     }
   ],
   "movement": {
@@ -69,7 +69,7 @@ Edit `settings.json` according to your needs:
 - `server.ip`: Server IP address or hostname.
 - `server.port`: Server port (default: 25565).
 - `server.version`: Target protocol version (e.g. "26.3").
-- `bots`: List of offline accounts to connect.
+- `bots`: List of offline accounts to connect. If the username contains "x" or "X" (e.g. "botxxxx"), each character is replaced by a random digit upon every connection and reconnection to prevent username bans.
 - `movement.enabled`: Toggles anti-AFK movement routines.
 - `movement.radius`: Maximum distance in blocks from initial spawn point.
 - `reconnect.enabled`: Automatic reconnection if connection is lost.
