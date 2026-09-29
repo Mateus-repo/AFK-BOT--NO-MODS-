@@ -15,9 +15,29 @@ class BotFalso extends EventEmitter {
     super()
     this.opcoes = opcoes
     this.username = opcoes.username
-    this.entity = { position: { x: 0, y: 64, z: 0 } }
+    const pos = { x: 0, y: 64, z: 0 }
+    pos.clone = () => ({ x: pos.x, y: pos.y, z: pos.z })
+    this.entity = { position: pos, yaw: 0, onGround: true }
     this.players = { [opcoes.username]: { ping: 42 } }
     this.chats = []
+    this.estados = {}
+    this.looks = 0
+    this._client = { write: () => {}, removeAllListeners() {}, on() {}, end() {}, socket: { destroy() {} } }
+  }
+  // O movimento anti-AFK usa estes
+  setControlState(chave, valor) {
+    this.estados[chave] = valor
+    eventos.push(`controlo:${chave}=${valor}`)
+  }
+  clearControlStates() {
+    this.estados = {}
+    eventos.push('controlo:limpo')
+  }
+  look() {
+    this.looks += 1
+  }
+  respawn() {
+    eventos.push('respawn')
   }
   chat(msg) {
     this.chats.push(msg)
@@ -76,12 +96,23 @@ setTimeout(() => {
     process.exit(3)
   }
   // Comandos que não devem rebentar
-  for (const linha of ['/server', '/typeinfo', '/ping', '/pos', '/help', '/comando-que-nao-existe', '/version', '/lang']) {
-    handlerDeLinha(linha)
+  const comandos = [
+    '/server', '/typeinfo', '/ping', '/pos', '/help', '/comando-que-nao-existe',
+    '/version', '/lang', '/andar', '/andar on', '/andar nope', '/andar off'
+  ];
+  for (const linha of comandos) {
+    handlerDeLinha(linha);
+    // Um tique de física depois de cada comando: o movimento anti-AFK só age
+    // com o bot ligado e dentro do mundo
+    if (ultimoBot) ultimoBot.emit('physicsTick');
   }
   // Comando que escreve a configuração
   handlerDeLinha('/changeserver 127.0.0.1:25570')
   handlerDeLinha('/changename bot_teste')
+  // Um tique de física, para o movimento anti-AFK fazer o seu trabalho
+  if (ultimoBot) {
+    ultimoBot.emit('physicsTick')
+  }
   if (!ultimoBot) {
     console.log('FALHA: o bot desapareceu')
     process.exit(4)

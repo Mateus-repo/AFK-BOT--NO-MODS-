@@ -103,6 +103,10 @@ verificar(
   JSON.stringify(configApos)
 )
 verificar('a porta antiga não se perdeu', configApos && configApos.server.port === 25570, JSON.stringify(configApos))
+verificar('o /andar responde e não rebenta', /anti-afk/i.test(stdout), stdout.slice(-400))
+verificar('o /andar com estado inválido mostra a sintaxe', stdout.includes('/andar [on|off]'), stdout.slice(-400))
+verificar('o movimento anti-AFK manda andar', linhaEventos.includes('controlo:forward=true'), linhaEventos)
+verificar('o movimento anti-AFK manda saltar', linhaEventos.includes('controlo:jump=true'), linhaEventos)
 
 console.log(`\n${passou} passaram, ${falhou} falharam`)
 if (falhou) process.exit(1)
