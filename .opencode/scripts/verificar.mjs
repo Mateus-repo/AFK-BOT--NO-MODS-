@@ -164,16 +164,16 @@ if (!pkg) {
   if (tracked) {
     for (const f of tracked) {
       for (const [re, porque] of [
-        [/^logs\//, 'logs de execução'],
-        [/^node_modules\//, 'dependências'],
+        [/(^|\/)logs\//, 'logs de execução'],
+        [/(^|\/)node_modules\//, 'dependências'],
         [/\.exe$/i, 'binário compilado'],
         [/\.msi$/i, 'instalador do Node'],
-        [/^node_installed\.flag$/, 'marca gerada pelo launcher'],
-        [/\.idea\//, 'configuração de IDE'],
+        [/(^|\/)node_installed\.flag$/, 'marca gerada pelo launcher'],
+        [/(^|\/)\.idea\//, 'configuração de IDE'],
       ]) {
         if (re.test(f)) nota('erro', 'higiene', `versionado mas nunca devia: ${f} (${porque})`)
       }
-      if (/^(settings|launcher_accounts)\.json$/.test(f)) {
+      if (/(^|\/)(settings|launcher_accounts)\.json$/.test(f)) {
         nota('erro', 'higiene', `${f} está versionado — pode conter dados reais (precisa de \`git rm --cached\`, com aprovação)`)
       }
     }
