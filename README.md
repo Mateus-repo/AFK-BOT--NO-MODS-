@@ -14,7 +14,7 @@ This is an AFK bot for Minecraft, built with Mineflayer, which allows various op
 
 ### Installing Dependencies
 ```bash
-npm install mineflayer mineflayer-pathfinder minecraft-data express
+npm install
 ```
 
 ## Installation

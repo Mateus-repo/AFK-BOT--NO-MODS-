@@ -14,7 +14,7 @@ Este é um bot AFK para Minecraft, construído com Mineflayer, que permite vári
 
 ### Instalando Dependências
 ```bash
-npm install mineflayer mineflayer-pathfinder minecraft-data express
+npm install
 ```
 
 ## Instalação
