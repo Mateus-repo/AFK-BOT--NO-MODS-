@@ -75,15 +75,38 @@ if (!pkg) {
   }
 }
 
-// ------------------------------------------------------------ 2. sintaxe JS
+// ------------------------------------------- 2b. dependências declaradas
 {
-  const js = listFiles(root).filter((f) => f.endsWith('.js') && !f.startsWith('.opencode/'))
-  if (js.length === 0) nota('aviso', 'sintaxe', 'nenhum ficheiro .js na raiz — nada para verificar')
-  for (const f of js) {
-    const err = syntaxError(readText(path.join(root, f)), f)
-    if (err) nota('erro', 'sintaxe', `${f}: ${err}`)
+  // Tudo o que o nosso código importa tem de estar no package.json. Sem esta
+  // verificação, uma dependência que funcione por acaso (por vir de outra) pode
+  // deixar de funcionar a meio de uma actualização.
+  const NODOS = new Set([
+    'assert', 'child_process', 'events', 'fs', 'http', 'https', 'module', 'net', 'os',
+    'path', 'readline', 'url', 'util', 'vm', 'zlib', 'dns', 'tty', 'worker_threads'
+  ])
+  const nossos = [
+    ...(fs.existsSync(path.join(root, 'index.js')) ? ['index.js'] : []),
+    ...(fs.existsSync(path.join(root, 'src'))
+      ? listFiles(root, path.join(root, 'src')).filter((f) => f.endsWith('.js'))
+      : [])
+  ]
+  const declaradas = new Set(Object.keys((pkg && pkg.dependencies) || {}))
+  const faltam = new Set()
+  for (const f of nossos) {
+    const texto = readText(path.join(root, f)) || ''
+    for (const m of texto.matchAll(/require\('([^']+)'\)/g)) {
+      const pedido = m[1]
+      if (pedido.startsWith('.')) continue
+      const nome = pedido.startsWith('@') ? pedido.split('/').slice(0, 2).join('/') : pedido.split('/')[0]
+      if (NODOS.has(nome)) continue
+      if (!declaradas.has(nome)) faltam.add(nome)
+    }
   }
-  if (js.length && !temErro('sintaxe')) out.ok(`sintaxe de ${js.length} ficheiro(s) JavaScript`)
+  if (faltam.size) {
+    nota('erro', 'deps', `importadas mas não declaradas no package.json: ${[...faltam].join(', ')}`)
+  } else if (nossos.length) {
+    out.ok(`todas as importações do nosso código estão declaradas (${declaradas.size} dependências)`)
+  }
 }
 
 // ------------------------------------------------------------ 3. segredos
