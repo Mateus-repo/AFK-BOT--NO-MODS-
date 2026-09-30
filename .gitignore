@@ -20,6 +20,9 @@ node_installed.flag
 *.msi
 nodeMsi/
 
+# Cópia de referência que o dono do projecto deixou
+resources/
+
 # Configuração de IDE
 .idea/
 .vscode/

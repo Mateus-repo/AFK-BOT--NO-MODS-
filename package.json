@@ -10,9 +10,9 @@
   "author": "Lamgerr",
   "license": "MIT",
   "dependencies": {
-    "mineflayer": "^4.0.0",
-    "mineflayer-pathfinder": "^2.1.1",
-    "minecraft-data": "^3.0.0"
+    "minecraft-data": "^3.114.0",
+    "mineflayer": "file:vendor/mineflayer",
+    "mineflayer-pathfinder": "^2.1.1"
   },
   "engines": {
     "node": ">=14.21.3"
