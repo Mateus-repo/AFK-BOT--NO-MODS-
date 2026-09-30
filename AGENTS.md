@@ -16,8 +16,8 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 6. **Segredos nunca entram no git.** `settings.json`, `launcher_accounts.json`, `logs/` e contas do launcher ficam de fora (verificação automática: `.opencode/scripts/check-secrets.mjs`).
 7. **Verifica antes de guardar.** `node .opencode/scripts/verificar.mjs` tem de estar sem erros antes de um commit; isso inclui `npm test`, que corre sem ligar a servidor nenhum. Testes que precisem de servidor são uma excepção e estão marcados como tal.
 8. **Pequeno e reversível.** Mudanças pequenas, um motivo por commit. Nada de refactor "de passagem".
-9. **Node mínimo 14.21.3** — o projecto tem de correr em Windows 7, e o Node 14 é a última série que lá corre. Nada de sintaxe nem de dependência que só exista a partir do Node 16 sem dizer isso primeiro. `node .opencode/scripts/verificar-node.mjs` trata disso.
-10. **Commitar e fazer push sem perguntar.** O dono do projecto deu autorização permanente (2026-09-29): assim que uma tarefa estiver verificada e coerente, faz-se o commit atómico e o `push` para o branch de trabalho, sem pedir confirmação. A protecção é o método — alterações pequenas, um motivo por commit, `verificar.mjs` limpo, segredos bloqueados, nunca `--force` e nunca directo para `main`.
+9. **Node mínimo 14.21.3** — o projecto tem de correr em Windows 7, e o Node 14 é a última série que lá corre. Nada de sintaxe nem de dependência que só exista a partir do Node 16 sem dizer isso primeiro. `node .opencode/scripts/verificar-node.mjs` trata disso. O Mineflayer que usamos é uma **cópia nossa em `vendor/`**, corrigida para isso — ver `docs/NODE-LEGADO.md`, e nunca editada à sorte: cada alteração entra no registo de patches.
+10. **Commitar e fazer push sem perguntar — o push é obrigatório.** O dono do projecto deu autorização permanente (2026-09-30): assim que uma tarefa passa na verificação, faz-se o commit atómico **e o `git push`**. Não se termina uma tarefa com trabalho por guardar nem commits por subir; se a verificação falhar, corrige-se e repete-se. A protecção é o método — alterações pequenas, um motivo por commit, `verificar.mjs` limpo, segredos bloqueados, nunca `--force` e nunca directo para `main`.
 
 ---
 
@@ -64,6 +64,9 @@ Este ficheiro é a entrada de todas as skills. Lê-o antes de tocar em nada.
 | `CHANGELOG.md` | notas de versão (vai ser criado) | `lancar-versao` |
 | `docs/modded.md` | compatibilidade com servidores modded | `modded` |
 | `docs/TESTAR.md` | procedimento de teste contra um servidor real | `modded` |
+| `docs/NODE-LEGADO.md` | como o bot corre em Node antigo, e o que está verificado | `modded` |
+| `vendor/mineflayer/` | **a nossa cópia do Mineflayer 4.39.0** | `modded` |
+| `vendor/patches/*/` | cópias corrigidas de dependências | `modded` |
 | `.opencode/skills/**` | as skills (criar / renomear / apagar) | `organizar-projeto` |
 | `.opencode/scripts/**` | verificações automáticas | `verificar` |
 | `.gitignore`, `.gitattributes`, `.github/` | estrutura e regras git | `organizar-projeto` |
@@ -158,4 +161,6 @@ Os caminhos nos comandos das skills são **relativos à raiz do repositório**.
 - **Windows 7 e mods**: o Java 8 é o último que corre em Windows 7, e o Via actual e o Minecraft 1.20.5+ precisam de Java 21. Não prometas as duas coisas ao mesmo tempo.
 - **`.opencode/scripts/verificar.mjs` corre todos os ficheiros de `test/`** (excepto `harness.js`). Um novo ficheiro de teste entra na verificação sem mais nada.
 - Os três `lang/*.txt` têm o mesmo conjunto de chaves; o `run.cpp` escolhe o idioma a partir de `settings.json`.
-- **Ninguém ligou este bot a um servidor a sério.** O procedimento está em `docs/TESTAR.md`; enquanto não acontecer, tudo o que está documentado sobre funcionar é teoria bem testada, não prova.
+- **`vendor/` é nosso e é sagrado:** é a cópia corrigida do Mineflayer. Ao mexer lá, actualiza `docs/PATCHES-NODE-LEGADO.json` e `docs/NODE-LEGADO.md`. Ao actualizar o Mineflayer, reaplica os patches.
+- `resources/` é a cópia original que o dono do projecto deixou; não se versiona e não se edita.
+- **Ninguém ligou este bot a um servidor a sério.** O procedimento está em `docs/GUIA-TESTE.md`; enquanto não acontecer, tudo o que está documentado sobre funcionar é teoria bem testada, não prova.
