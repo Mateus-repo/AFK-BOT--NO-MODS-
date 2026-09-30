@@ -1,0 +1,6 @@
+# Este ficheiro diz ao servidor que aceitas a licença do Minecraft e do Paper.
+# A linha tem de ser exactamente esta.
+#
+#   https://papermc.io/descargar
+#
+eula=true

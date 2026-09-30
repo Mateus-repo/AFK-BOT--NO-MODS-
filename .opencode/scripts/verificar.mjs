@@ -319,10 +319,26 @@ if (!pkg) {
 // ------------------------------------------- 9. testes (npm test)
 {
   const pastaTestes = path.join(root, 'test')
+  // `harness.js` é apoio dos outros testes. Um ficheiro com
+  // `REQUER_SERVIDOR` precisa de um servidor a correr e fica de fora: contá-lo
+  // como teste normal dava resultados que não querem dizer nada.
+  const precisaDeServidor = (f) => {
+    try {
+      return /REQUER_SERVIDOR\s*=\s*true/.test(fs.readFileSync(path.join(pastaTestes, f), 'utf8'))
+    } catch {
+      return false
+    }
+  }
   const ficheiros = fs.existsSync(pastaTestes)
     ? fs
         .readdirSync(pastaTestes)
-        .filter((f) => f.endsWith('.js') && f !== 'harness.js')
+        .filter((f) => f.endsWith('.js') && f !== 'harness.js' && !precisaDeServidor(f))
+        .sort()
+    : []
+  const manuais = fs.existsSync(pastaTestes)
+    ? fs
+        .readdirSync(pastaTestes)
+        .filter((f) => f.endsWith('.js') && f !== 'harness.js' && precisaDeServidor(f))
         .sort()
     : []
 
@@ -350,6 +366,9 @@ if (!pkg) {
     }
   }
   if (total) out.ok(`${total} verificações no total`)
+  if (manuais.length) {
+    out.ok(`${manuais.length} teste(s) à espera de um servidor a sério: ${manuais.join(', ')}`)
+  }
 }
 
 
