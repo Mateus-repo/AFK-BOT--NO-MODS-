@@ -172,7 +172,7 @@ function createBot() {
   const authType = config['bot-account']['type'];
   const username = config['bot-account']['username'];
   const password = config['bot-account']['password'] || undefined;
-  const authMethod = authType === 'microsoft' ? 'microsoft' : 'mojang';
+  const authMethod = metodoAuth(authType);
 
   bot = mineflayer.createBot({
     host: config.server.ip,
@@ -212,6 +212,21 @@ function createBot() {
 }
 
 /**
+ * Traduz o tipo de conta do settings.json para o método de autenticação do
+ * Mineflayer.
+ *
+ * - `mojang`: conta premium Mojang, precisa de senha
+ * - `microsoft`: conta Microsoft, precisa de senha
+ * - `offline`: sem conta nenhuma; é o que os servidores com
+ *   `online-mode=false` aceitam, e o que permite testar sem conta premium
+ */
+function metodoAuth(tipo) {
+  if (tipo === 'microsoft') return 'microsoft';
+  if (tipo === 'offline') return 'offline';
+  return 'mojang';
+}
+
+/**
  * Cria uma sessão: uma instância do Mineflayer, com o seu movimento e a sua
  * reconexão. Uma sessão caída não afecta as outras.
  */
@@ -234,7 +249,7 @@ function criarSessao(configBot) {
     ligar() {
       reconexao.clear();
       reconexao.ativar();
-      const authMethod = configBot.type === 'microsoft' ? 'microsoft' : 'mojang';
+      const authMethod = metodoAuth(configBot.type);
       s.estado = 'a_ligar';
       s.bot = mineflayer.createBot({
         host: config.server.ip,
@@ -635,7 +650,7 @@ function defaultConfig() {
  */
 function changeType(newType) {
   newType = (newType || '').toLowerCase();
-  if (!['mojang', 'microsoft'].includes(newType)) {
+  if (!['mojang', 'microsoft', 'offline'].includes(newType)) {
     console.log(t('syntax_changetype'));
     return;
   }
@@ -705,8 +720,13 @@ function changeType(newType) {
  * Função que trata o comando /typeinfo
  */
 function typeInfo() {
-  const currentType = config['bot-account']['type'];
-  console.log(`${t('cmd_typeinfo')} ${currentType}`);
+  const tipo = config['bot-account'].type;
+  if (tipo === 'offline') {
+    console.log(`${t('cmd_typeinfo')} ${t('type_offline')}`);
+    console.log(t('auth_offline_note'));
+    return;
+  }
+  console.log(`${t('cmd_typeinfo')} ${tipo === 'microsoft' ? t('type_microsoft') : t('type_mojang')}`);
 }
 
 /**

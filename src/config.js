@@ -22,7 +22,9 @@ const FALLBACK_CONFIG = {
   }
 }
 
-const TIPOS_CONTA = ['mojang', 'microsoft']
+// 'offline' é para servidores com online-mode=false: não pede conta nenhuma,
+// e é o que permite testar sem uma conta premium.
+const TIPOS_CONTA = ['mojang', 'microsoft', 'offline']
 
 function isPlainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value)
