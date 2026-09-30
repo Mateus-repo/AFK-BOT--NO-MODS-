@@ -7,31 +7,21 @@ AFK bot for Minecraft Java Edition servers, compatible with Minecraft 26.3 and W
 ## Features
 
 - Supports Minecraft 26.3 (protocol 777) and older versions
-- Windows 7 32-bit support via Node.js 18.20.8 x86
+- Windows 7 32-bit support with bundled portable node.exe
 - Offline accounts only (no Microsoft authentication needed)
-- Anti-AFK randomized movement bounded by radius
+- Anti-AFK continuous circle movement and jumping
 - Exponential backoff reconnection on network loss
 - Multi-bot concurrent connections
 - Interactive terminal command interface
 
-## Windows 7 32-bit Setup
+## Running on Windows 7 32-bit
 
-1. Download Node.js 18.20.8 x86:
-   https://nodejs.org/dist/v18.20.8/node-v18.20.8-win-x86.zip
+The repository includes a custom `node.exe` patched specifically to run on Windows 7 32-bit without operating system errors. No installation or environment variable setup is required:
 
-2. Extract the archive to `C:\nodejs`.
+1. Configure `settings.json` with your server details.
+2. Launch the bot by running `start.bat`.
 
-3. Add `C:\nodejs` to the system `Path` variable:
-   - Control Panel > System > Advanced system settings > Environment Variables
-   - Edit the `Path` variable and append `;C:\nodejs` to the end.
-
-4. Add a new system environment variable:
-   - Name: `NODE_SKIP_PLATFORM_CHECK`
-   - Value: `1`
-
-5. Open a command prompt and run `npm install` inside the project folder.
-
-6. Launch the bot by double clicking `start.bat`.
+The `start.bat` script automatically uses the local `node.exe`, sets `NODE_SKIP_PLATFORM_CHECK=1`, and starts the bot.
 
 ## Configuration
 
@@ -51,9 +41,10 @@ Edit `settings.json` according to your needs:
   ],
   "movement": {
     "enabled": true,
-    "intervalSeconds": 20,
-    "actionDurationMs": 800,
-    "radius": 3
+    "activeDurationSeconds": 180,
+    "pauseDurationSeconds": 30,
+    "radius": 1.2,
+    "fixedCenter": null
   },
   "reconnect": {
     "enabled": true,
@@ -71,7 +62,10 @@ Edit `settings.json` according to your needs:
 - `server.version`: Target protocol version (e.g. "26.3").
 - `bots`: List of offline accounts to connect. If the username contains "x" or "X" (e.g. "botxxxx"), each character is replaced by a random digit upon every connection and reconnection to prevent username bans.
 - `movement.enabled`: Toggles anti-AFK movement routines.
-- `movement.radius`: Maximum distance in blocks from initial spawn point.
+- `movement.activeDurationSeconds`: Duration of active moving and jumping phase in seconds (default: 180).
+- `movement.pauseDurationSeconds`: Duration of paused static phase in seconds (default: 30).
+- `movement.radius`: Movement circle radius in blocks (default: 1.2).
+- `movement.fixedCenter`: Optional {x, y, z} fixed center coordinates or null to use spawn position.
 - `reconnect.enabled`: Automatic reconnection if connection is lost.
 
 ## Terminal Commands

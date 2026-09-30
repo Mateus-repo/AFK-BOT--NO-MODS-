@@ -7,31 +7,21 @@ Bot AFK para servidores Minecraft Java Edition, compativel com Minecraft 26.3 e 
 ## Caracteristicas
 
 - Compativel com Minecraft 26.3 (protocolo 777) e versoes anteriores
-- Suporte para Windows 7 32 bits atraves do Node.js 18.20.8 x86
+- Suporte para Windows 7 32 bits com node.exe portatil incluido
 - Apenas contas offline (sem autenticacao Microsoft)
-- Movimento aleatorio anti-AFK com delimitacao de raio
+- Movimento em circulo e saltos continuos anti-AFK
 - Reconexao automatica com tempo progressivo
 - Gestao de multiplos bots em simultaneo
 - Controlo em tempo real via terminal
 
-## Instalacao em Windows 7 32 bits
+## Execucao em Windows 7 32 bits
 
-1. Descarregue o Node.js 18.20.8 x86:
-   https://nodejs.org/dist/v18.20.8/node-v18.20.8-win-x86.zip
+O repositorio inclui um executavel `node.exe` adaptado especificamente para correr em Windows 7 32 bits sem erros do sistema operativo. Nao e necessaria qualquer instalacao ou configuracao de variaveis de ambiente:
 
-2. Extraia o conteudo para `C:\nodejs`.
+1. Configure o ficheiro `settings.json` com os dados do servidor.
+2. Inicie o bot executando `start.bat`.
 
-3. Adicione `C:\nodejs` a variavel de sistema `Path`:
-   - Painel de Controlo > Sistema > Definicoes avancadas do sistema > Variaveis de ambiente
-   - Selecione a variavel `Path` e adicione `;C:\nodejs` no fim.
-
-4. Crie uma variavel de ambiente do sistema:
-   - Nome: `NODE_SKIP_PLATFORM_CHECK`
-   - Valor: `1`
-
-5. Abra uma linha de comandos e execute `npm install` na pasta do bot.
-
-6. Inicie o bot executando `start.bat`.
+O script `start.bat` utiliza automaticamente o `node.exe` local, ativa a compatibilidade (`NODE_SKIP_PLATFORM_CHECK=1`) e inicia o bot.
 
 ## Configuracao
 
@@ -51,9 +41,10 @@ Edite o ficheiro `settings.json` com os dados pretendidos:
   ],
   "movement": {
     "enabled": true,
-    "intervalSeconds": 20,
-    "actionDurationMs": 800,
-    "radius": 3
+    "activeDurationSeconds": 180,
+    "pauseDurationSeconds": 30,
+    "radius": 1.2,
+    "fixedCenter": null
   },
   "reconnect": {
     "enabled": true,
@@ -71,7 +62,10 @@ Edite o ficheiro `settings.json` com os dados pretendidos:
 - `server.version`: Versao do protocolo pretendida (exemplo: "26.3").
 - `bots`: Lista de contas offline a ligar. Se o nome contiver "x" ou "X" (ex: "botxxxx"), cada letra e substituida por um digito aleatorio a cada tentativa de ligacao ou reconexao, evitando bloqueios de nick.
 - `movement.enabled`: Ativa ou desativa a movimentacao anti-AFK.
-- `movement.radius`: Distancia maxima em blocos a partir do ponto de entrada.
+- `movement.activeDurationSeconds`: Duracao da fase de movimento e saltos em segundos (padrao: 180).
+- `movement.pauseDurationSeconds`: Duracao da pausa estatica entre ciclos em segundos (padrao: 30).
+- `movement.radius`: Raio do circulo de movimento em blocos (padrao: 1.2).
+- `movement.fixedCenter`: Coordenadas {x, y, z} opcionais para fixar o centro ou null para o spawn.
 - `reconnect.enabled`: Ativa a reconexao automatica em caso de queda de rede.
 
 ## Comandos do terminal

@@ -1,6 +1,6 @@
 {
   "server": {
-    "ip": "Localhost",
+    "ip": "localhost",
     "port": 25565,
     "version": "26.3"
   },

@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
+// Compatibilidade de rede para o protocolo 777 (Minecraft 26.3):
+// Mapeia pacotes em falta a partir do protocolo 26.1 e contorna o processamento de iluminacao de chunks.
 function setupMinecraft263Compat() {
   const minecraftData = require('minecraft-data');
   const data = require('minecraft-data/data.js');
@@ -177,7 +179,8 @@ function loadSettings() {
     enabled: parsed.movement?.enabled !== false,
     activeDurationSeconds: Number(parsed.movement?.activeDurationSeconds) || 180,
     pauseDurationSeconds: Number(parsed.movement?.pauseDurationSeconds) || 30,
-    radius: Number(parsed.movement?.radius) || 4
+    radius: Number(parsed.movement?.radius) || 1.2,
+    fixedCenter: parsed.movement?.fixedCenter || null
   };
 
   const reconnect = {
@@ -188,6 +191,8 @@ function loadSettings() {
 
   return { server, bots: botList, movement, reconnect };
 }
+
+const CONNECTION_TIMEOUT_MS = 35000;
 
 class BotSession {
   constructor(username, config) {
@@ -292,9 +297,8 @@ class BotSession {
       username: this.username,
       auth: 'offline',
       hideErrors: true,
-      viewDistance: 2, // Otimizacao Atom: reduz chunks do servidor para o minimo essencial
+      viewDistance: 2,
       plugins: {
-        // Desativa plugins desnecessarios para poupar 100% de CPU/RAM em processadores fracos
         particle: false,
         sound: false,
         rain: false,
@@ -331,13 +335,12 @@ class BotSession {
 
     console.log(`[${this.username}] A ligar a ${botOptions.host}:${botOptions.port} (versao: ${botOptions.version || 'auto'})...`);
 
-    // Temporizador de seguranca caso o servidor nao responda ou fique preso no handshake
     this.connectTimeoutTimer = setTimeout(() => {
       if (this.status === 'connecting' || this.status === 'logged_in') {
         console.log(`[${this.username}] Tempo limite de conexao esgotado (35s). A reiniciar tentativa...`);
         this.handleDisconnect('tempo limite esgotado', 'timeout');
       }
-    }, 35000);
+    }, CONNECTION_TIMEOUT_MS);
 
     try {
       this.instance = mineflayer.createBot(botOptions);
@@ -457,6 +460,7 @@ class BotSession {
     if (!bot._client) return;
     const originalWrite = bot._client.write.bind(bot._client);
 
+    // O protocolo 777 exige coordenadas e orientacao no payload do pacote teleport_confirm.
     bot._client.write = (packetName, params) => {
       if (packetName === 'teleport_confirm' && params && typeof params === 'object') {
         if (params.x === undefined) {
@@ -499,8 +503,11 @@ class BotSession {
       hasCenter = true;
     }
 
-    const LOOK_AHEAD_ANGLE = Math.PI / 3; // 60 graus a frente na circunferencia
-    let direction = 1; // 1 = sentido horario, -1 = anti-horario
+    const LOOK_AHEAD_ANGLE = Math.PI / 3;
+    const STUCK_TICK_THRESHOLD = 12;
+    const ROTATION_CLOCKWISE = 1;
+    const ROTATION_COUNTER_CLOCKWISE = -1;
+    let rotationDirection = ROTATION_CLOCKWISE;
     let lastX = 0;
     let lastZ = 0;
     let hasLastPos = false;
@@ -533,57 +540,53 @@ class BotSession {
           hasLastPos = true;
         }
 
-        // 1. Detecao de bloqueio (arimetica pura sem alocacao de objetos)
         const mx = curX - lastX;
         const mz = curZ - lastZ;
-        const distMoved = Math.sqrt(mx * mx + mz * mz);
+        const distanceMoved = Math.sqrt(mx * mx + mz * mz);
         lastX = curX;
         lastZ = curZ;
 
-        if (distMoved < 0.02) {
+        if (distanceMoved < 0.02) {
           stuckTicks++;
-          if (stuckTicks >= 12) { // 600ms bloqueado
+          if (stuckTicks >= STUCK_TICK_THRESHOLD) {
             stuckTicks = 0;
             stuckCount++;
             if (stuckCount >= 2 && !this.config.movement.fixedCenter) {
               centerX = curX;
               centerY = curY;
               centerZ = curZ;
-              direction = Math.random() < 0.5 ? 1 : -1;
+              rotationDirection = Math.random() < 0.5 ? ROTATION_CLOCKWISE : ROTATION_COUNTER_CLOCKWISE;
               stuckCount = 0;
             } else {
-              direction *= -1; // Inverte o sentido de rotacao
+              rotationDirection = -rotationDirection;
             }
           }
         } else {
           if (stuckTicks > 0) stuckTicks--;
-          if (distMoved > 0.05) stuckCount = 0;
+          if (distanceMoved > 0.05) stuckCount = 0;
         }
 
-        // 2. Adaptacao de elevacao se mudar de patamar
         if (bot.entity.onGround && Math.abs(curY - centerY) > 1.2 && !this.config.movement.fixedCenter) {
           centerX = curX;
           centerY = curY;
           centerZ = curZ;
         }
 
-        // 3. Calculo do ponto alvo no perimetro do circulo
         const dx = curX - centerX;
         const dz = curZ - centerZ;
         const currentAngle = Math.atan2(dz, dx);
-        const targetAngle = currentAngle + direction * LOOK_AHEAD_ANGLE;
+        const targetAngle = currentAngle + rotationDirection * LOOK_AHEAD_ANGLE;
         const targetX = centerX + R * Math.cos(targetAngle);
         const targetZ = centerZ + R * Math.sin(targetAngle);
 
-        // 4. Orientacao suave em direcao ao ponto alvo
         const toTargetX = targetX - curX;
         const toTargetZ = targetZ - curZ;
-        const desiredYaw = Math.atan2(-toTargetX, -toTargetZ);
+        const targetHeading = Math.atan2(-toTargetX, -toTargetZ);
 
-        let diff = (desiredYaw - bot.entity.yaw) % (Math.PI * 2);
-        if (diff < -Math.PI) diff += Math.PI * 2;
-        if (diff > Math.PI) diff -= Math.PI * 2;
-        const newYaw = bot.entity.yaw + diff * 0.4;
+        let headingDiff = (targetHeading - bot.entity.yaw) % (Math.PI * 2);
+        if (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
+        if (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
+        const newYaw = bot.entity.yaw + headingDiff * 0.4;
 
         bot.look(newYaw, 0, true);
       } else if (this.afkPhase === 'paused') {

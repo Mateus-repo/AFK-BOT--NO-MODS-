@@ -14,7 +14,6 @@ let bot;
 let messages = {};
 let currentLang = config.language || 'eng';
 
-// Função para carregar arquivo de idioma
 function loadLanguage(lang) {
   const filePath = path.join(__dirname, 'lang', `${lang}.txt`);
   if (!fs.existsSync(filePath)) {
@@ -35,12 +34,10 @@ function loadLanguage(lang) {
   return true;
 }
 
-// Função de tradução
 function t(key) {
   return messages[key] || key;
 }
 
-// Formata timestamp para logs
 function formatTimestamp(date) {
   const YYYY = date.getFullYear();
   const MM = String(date.getMonth() + 1).padStart(2, '0');
@@ -52,7 +49,6 @@ function formatTimestamp(date) {
   return `[${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss}.${mmm}]`;
 }
 
-// Configurando o log
 const logsDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
@@ -65,13 +61,11 @@ function log(text, type = 'INFO') {
   console.log(line.trim());
 }
 
-// Carrega idioma inicial
 if (!loadLanguage(currentLang)) {
   currentLang = 'eng';
   loadLanguage(currentLang);
 }
 
-// Gera nome aleatório do formato bot_<6chars>
 function getRandomBotName() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let suffix = '';
@@ -81,7 +75,6 @@ function getRandomBotName() {
   return 'bot_' + suffix;
 }
 
-// Ajusta nome do bot se não iniciar com "bot_"
 function ensureBotName() {
   let username = config['bot-account']['username'];
   if (!username.startsWith('bot_')) {
@@ -92,7 +85,6 @@ function ensureBotName() {
   }
 }
 
-// Prompt para configurar o servidor se não definido
 function promptServerSetup(callback) {
   console.log(t('prompt_server_setup'));
   rl.question('', (input) => {
@@ -114,18 +106,14 @@ function promptServerSetup(callback) {
   });
 }
 
-// Função para recarregar/reiniciar o script
 function reloadScript() {
-  // Limpa console
   process.stdout.write('\x1B[2J\x1B[0f');
-  // Respawn do script
   const proc = spawn(process.argv[0], [process.argv[1]], { stdio: 'inherit' });
   proc.on('close', (code) => {
     process.exit(code);
   });
 }
 
-// Cria e conecta o bot
 function createBot() {
   const authType = config['bot-account']['type'];
   const username = config['bot-account']['username'];
@@ -162,7 +150,6 @@ function createBot() {
   });
 }
 
-// Comandos auxiliares
 function showServer() {
   console.log(`${t('cmd_server')} ${config.server.ip}:${config.server.port} (v${config.server.version})`);
 }
@@ -402,14 +389,12 @@ function showHelp() {
   console.log(t('help_command_help'));
 }
 
-// Interface de leitura de comandos no terminal
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   prompt: '> '
 });
 
-// Antes de criar o bot, verificar servidor e nome
 function init() {
   ensureBotName();
   if (!config.server.ip) {
@@ -489,5 +474,4 @@ rl.on('line', (line) => {
   stopBot();
 });
 
-// Inicia o bot com verificações iniciais
 init();
