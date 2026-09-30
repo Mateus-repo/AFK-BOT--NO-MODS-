@@ -1,174 +1,115 @@
-# Guia de teste a sério
+# Como testar o bot a sério
 
-> Os testes automáticos (123 verificações) correm com o Mineflayer **simulado**.
-> Ninguém, até agora, ligou este bot a um servidor de verdade. Este documento é o
-> procedimento completo.
->
-> Actualizado: 2026-09-30
+> Não precisas de instalar nada à mão. Este guia usa o servidor Paper que vive
+> dentro do projecto, em `servidores/`. Data: 2026-09-30.
 
----
+## O caminho curto
 
-## 0. Antes de tudo: dois bloqueios conhecidos
+Noutra janela, arranca o servidor:
 
-### Bloqueio 1 — a biblioteca instalada é de 2019
-
-O `package-lock.json` restaurado da v2.1 fixa versões antigas:
-
-```
-mineflayer 4.0.0  ·  minecraft-data 3.4.0  ·  minecraft-protocol 1.35.0
+```bash
+node servidores/arrancar.js 26.3
 ```
 
-| | Suportado |
-|---|---|
-| `minecraft-data` conhece | 50 versões, **até 1.18.2** |
-| `mineflayer` diz testar | **até 1.18.1** |
+Noutra, corre o teste de ligação:
 
-Consequências:
-
-- Só dá para testar servidores de **1.8 a 1.18**.
-- O **patch do 26.3 está inactivo**: ele copia a versão `26.1` da biblioteca, e
-  essa versão não existe no `minecraft-data` 3.4.0. A função devolve «a
-  biblioteca não conhece a versão base» e não faz nada.
-
-O código-fonte do Mineflayer 4.39.0 está em `resources/mineflayer-source_code`.
-Ver `ROADMAP.md` e `IDEIAS.md` para o plano de actualizar ou vendorizar.
-
-### Bloqueio 2 — o bot não entra em servidores offline
-
-O `settings.json` só aceita `"type": "mojang"` ou `"microsoft"`. Um servidor com
-`online-mode=false` — quase todos os de teste — **não deixa o bot entrar sem uma
-conta premium verdadeira**. Falta o tipo `offline` (o bot do outro autor usava
-`auth: offline`).
-
----
-
-## 1. Que ficheiros abrir
-
-| Ficheiro | Para que serve | Quando |
-|---|---|---|
-| `settings.json` | configuração viva; **o único que vais editar** | antes de cada teste |
-| `default.json` | modelo com todas as opções e valores por omissão | para saber o que existe |
-| `docs/GUIA-TESTE.md` | este documento | durante o teste |
-| `PROGRESSO.md` → *Problemas conhecidos* | o que **já** está mal, para não o descobrir outra vez | antes de testar |
-| `README.pt.md` | comandos e respective efeito | quando te perderes |
-| `logs/latest.log` | tudo o que o bot escreveu, com timestamp | quando algo correr mal |
-| `docs/modded.md` | estado da compatibilidade com mods | para saber o que **não** está feito |
-
-`settings.json` e `logs/` estão no `.gitignore` — nunca são versionados.
-
-## 2. Que servidor criar
-
-O caminho mais fiável é um **servidor na tua máquina**: sem latência, podes
-reiniciá-lo à vontade e podes matá-lo para testar a reconexão.
-
-| Opção | Versão do MC | Java | Quando usar |
-|---|---|---|---|
-| **Paper local** | 1.12.2 | Java 8 | primeira prova, a mais estável |
-| **Paper local** | 1.16.5 | Java 17 | testar o `auto` a escolher versão |
-| **Paper local** | 1.18.1 | Java 17 | o topo do que a biblioteca actual suporta |
-| Aternos ou similar | 1.12–1.16 | o que a plataforma der | se não quiseres instalar Java |
-| **Mods (Forge/Fabric)** | qualquer | Java 21 | **não testar ainda** |
-
-### Como montar o servidor local (Paper)
-
-1. Instala o Java certo (8 para 1.12, 17 para 1.16/1.18) e define `JAVA_HOME`.
-2. Cria uma pasta vazia, por exemplo `C:\servidor-mc`.
-3. Descarrega o `paper.jar` da versão escolhida para essa pasta.
-4. Cria `eula.txt` com uma linha: `eula=true`
-5. Cria `server.properties` com duas linhas que importam:
-   ```
-   online-mode=false
-   level-type=flat
-   ```
-   `online-mode=false` é obrigatório sem conta premium. `level-type=flat` dá um
-   chão plano, o cenário ideal para ver o movimento anti-AFK a circular.
-6. Corre `java -Xmx1G -jar paper.jar nogui`
-7. Na primeira vez pergunta o nível; aceita. Depois arranca directo.
-
-Para testar versões antigas mais facilmente, mete o
-[ViaVersion](https://viaversion.com) no Paper: um servidor só fala 1.18 e tu
-testas 1.8, 1.12 e 1.16 contra o mesmo.
-
-## 3. A configuração
-
-`settings.json` na raiz do projecto:
-
-```json
-{
-  "server": { "ip": "127.0.0.1", "port": 25565, "version": "1.12.2" },
-  "bot-account": { "type": "mojang", "username": "bot_teste", "password": "" },
-  "language": "pt-pt"
-}
+```bash
+node test/servidor-real.js
 ```
 
-Arranca com:
+E, se o teste passar, o bot a sério:
 
 ```bash
 node index.js
 ```
 
-## 4. O que deves ver, mensagem a mensagem
+## O que o `arrancar.js` faz
 
-Saídas exactas, como estão em `lang/pt-pt.txt`:
+- Arranca o Paper com 1 GB de memória (muda com `AFK_MEMORIA=2G`).
+- Deixa o terminal livre: o Paper lê comandos do teclado, que roubaria a janela.
+- Para parar: `Ctrl+C`, ou `node servidores/arrancar.js 26.3 stop`.
 
-| Quando | O que deves ver | Se não vires |
-|---|---|---|
-| arranque | `📍 Bot entrou no mundo.` | o comando falhou antes |
-| arranque | `🚶 Movimento anti-AFK ligado` | o `movement.enabled` está a `false` |
-| `/diagnostico` | `  node: v22.17.1` | o diagnóstico não correu |
-| `/diagnostico` | `  Sessões: 1` | há mais bots do que esperavas |
-| `/pos` | coordenadas que **mudam** em segundos | o movimento não anda |
-| queda | `🔄 A reconectar em 1s (motivo: ...)` | a reconexão não arrancou |
-| volta a ligar | `📍 Bot entrou no mundo.` outra vez | o contador não reiniciou |
-| 10 tentativas | `❌ Desisti de reconectar...` | é o limite, e é o esperado |
+## O que precisa de estar instalado
 
-## 5. Os testes, por ordem
+| Precisa de | Porquê |
+|---|---|
+| **Node** (14.21.3 ou mais recente) | o bot |
+| **Java 21 ou mais recente** | o servidor Paper |
+| Nada mais | o resto vem no `package.json` |
 
-**T1 — arranque limpo.** Apaga o `settings.json` e arranca. Deves ver
-`⚠️ settings.json não encontrado; a usar o default.json.` e depois
-`📡 Por favor, insira o endereço do servidor`. Escreve `127.0.0.1:25565` e o bot
-deve entrar. Se usares `/default`, ele deixa um `settings.json.bak`.
+O Java 8 é o último que corre no Windows 7, mas o Paper actual **não** corre
+em Java 8. Ver *Testar no Windows 7* abaixo.
 
-**T2 — diagnóstico.** Quando aparecer o `>`, escreve `/diagnostico` e guarda a
-saída. **É a primeira coisa que me mandas.**
+## E se quiser outra versão
 
-**T3 — movimento.** Deixa o bot 2 minutos e escreve `/pos` duas vezes com 30
-segundos de intervalo. As coordenadas têm de mudar. Se ficar parado, o `radius`
-(1.2) ou os ângulos estão errados para o teu mundo — é o ponto mais provável de
-falhar, porque os valores vieram do código do outro autor e nunca foram testados.
+```bash
+node servidores/baixar-paper.js 1.21.4
+node servidores/arrancar.js 1.21.4
+node test/servidor-real.js
+```
 
-**T4 — queda e reconexão.** Na consola do servidor, escreve `stop`. O bot deve
-dizer `🔌 Conexão encerrada.` e `🔄 A reconectar em 1s`. Arranca o servidor outra
-vez: o bot deve entrar sozinho e o contador reiniciar.
+O script pergunta ao PaperMC a versão mais recente de cada build e confirma a
+soma SHA256 do jar antes de o dar como bom.
 
-**T5 — versão automática.** Muda para `"version": "auto"` e reinicia.
-Com o servidor ligado: `🔎 Versão do servidor detectada: 1.12.2`.
-**O teste mais importante é o contrário:** com o servidor parado, o bot tem de
-avisar `⚠️ Não consegui detectar a versão do servidor:` e **ligar na mesma** com a
-versão mais recente da biblioteca. Se ficar à espera, é bug meu.
+## O `settings.json` para o servidor local
 
-**T6 — comandos.** `help`, `server`, `typeinfo`, `pos`, `ping`, `chat olá`,
-`bots`, `lang en`, `lang pt-pt`, `version 1.16.5`,
-`changeserver 127.0.0.1:25565`, `andar off`, `andar on`, `stop`. Nenhum pode
-crashar.
+```json
+{
+  "server": "127.0.0.1",
+  "port": 25565,
+  "type": "offline",
+  "version": "26.3",
+  "username": "bot_teste"
+}
+```
 
-**T7 — multi-bot (opcional).** Acrescenta
-`"bots": [{"username": "botxxxx"}, {"username": "botxxxx"}]` e confirma que
-`/bots` lista dois nomes diferentes. Precisa do `offline` (bloqueio 2).
+- `"type": "offline"` é o que permite ligar sem conta premium. O servidor tem
+  `online-mode=false`.
+- `"version": "26.3"` diz ao bot que versão falar. `"auto"` pergunta ao servidor
+  primeiro — bom para experimentar, mas o patch do 26.3 tem de estar aplicado, e
+  o `/diagnostico` diz-te o que ele escolheu.
+- Uma conta real é `"type": "mojang"` ou `"type": "microsoft"`. **Nunca** metas
+  a password no `settings.json`; o bot pede-a no terminal.
 
-## 6. O que me mandas
+## O teste de ligação a sério
 
-1. A saída de `/diagnostico`, inteira.
-2. O `logs/latest.log` desse arranque.
-3. A versão do Java e a do Paper no servidor.
-4. Uma frase sobre cada resultado: «entrou», «não entrou», «ficou parado»,
-   «não voltou».
+`test/servidor-real.js` é diferente dos outros testes: precisa de um servidor a
+correr, por isso fica fora da verificação automática (traz a marca
+`REQUER_SERVIDOR`) e corre-se à mão.
 
-Com o `logs/latest.log` consigo quase sempre dizer o que aconteceu sem te fazer
-mais perguntas.
+Só aceita servidores locais. Não é movies: corre sem pedir nada a ninguém e
+usa autenticação offline, mas mesmo assim não deve poder ser apontado a um
+servidor que não seja teu.
 
-## 7. O que não testar agora
+O que prova:
 
-- **Mods** — o sidecar Via não está implementado.
-- **Versões acima de 1.18** — bloqueado pela biblioteca antiga (bloqueio 1).
-- **Windows 7** — só depois das fases 2 e 3 fechadas.
+- que o pedido de estado do nosso código percebe um servidor real;
+- que o Mineflayer entra na sessão e no mundo;
+- que o movimento anti-AFK mexe mesmo no mundo;
+- que a versão `26.3` é aceite depois do patch.
+
+O que **não** prova: contas premium, anticheat, nem servidores com mods.
+
+## Se correr mal
+
+| O que aparece | O que significa |
+|---|---|
+| `não há nada a escutar` | o servidor não arrancou. Vê o `logs/latest.log` dentro de `servidores/paper-*/` |
+| `No data available for version` | a versão não está instalada. `node servidores/baixar-paper.js` para a versão que o teste pede |
+| `Outdated client!` | a versão do bot é mais antiga que a do servidor |
+| `excepção solta: [Prismarine-chunk]` | uma biblioteca não conhece a versão. É o ponto em que o 26.3 está hoje |
+
+## Testar no Windows 7
+
+O Windows 7 é o problema conhecido do projecto: lá o Java 8 é o último que
+c corre, e o Paper actual precisa de Java 21. **Não cabem os dois.**
+
+Duas saídas, por decidir com o dono do projecto:
+
+1. Testar o bot contra o Paper noutra máquina da rede, e em Windows 7 usar um
+   servidor mais antigo (1.12.2, que corre em Java 8) — a biblioteca conhece
+   essa versão, por isso o bot entra sem patches.
+2. Aceitar que o Windows 7 fica para o bot e o Paper fica para o resto.
+
+A opção 1 é a que dá menos trabalho e mais prova. Até lá, o `docs/NODE-LEGADO.md`
+diz o que está verificado no Node 14.21.3 e o que não.

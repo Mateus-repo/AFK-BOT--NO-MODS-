@@ -23,7 +23,9 @@
 
 ## Em curso
 
-Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios, e um teste a correr contra um servidor a sério.
+Fase 3: já há um servidor Paper 26.3 local a correr e o nosso pedido de estado **responde** contra ele. A ligação do Mineflayer já negocia o protocolo e rebenta a seguir, no `prismarine-chunk`, que também não conhece o 26.3 (ver *Problemas conhecidos*).
+
+Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios.
 
 ## Próximos passos
 
@@ -31,7 +33,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
 - [ ] (Fase 2) Testar o **multi-bot** num servidor a sério (nomes repetidos, kicked, limites de jogadores)
 - [ ] (Fase 2) Testar o **movimento anti-AFK** num servidor a sério: os ângulos e o raio são um palpite até haver jogo
-- [ ] Testar o patch do 26.3 contra um servidor a sério — **é o requisito R2 e ainda ninguém o confirmou**
+- [ ] **Fazer o `prismarine-chunk` (e `prismarine-registry`, `prismarine-item`) aceitarem o 26.3** — é o que bloqueia a primeira ligação a sério. O `src/versoes.js` remapeia os pacotes do protocolo, mas estas bibliotecas escolhem a implementação pelo nome da versão e não têm entrada para o 26.3. O mesmo que já se faz com `registarFisicas()` para a física
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
@@ -39,11 +41,15 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 3) Testar a detecção contra servidores reais de versões diferentes (1.8, 1.12, 1.16, 1.20, 1.21, 26.3)
 - [ ] (Fase 3) Traduzir os erros de protocolo mais comuns e dizer quando o servidor usa Via
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
-- [ ] Testar contra um servidor a sério, seguindo `docs/GUIA-TESTE.md` (o `GUIA` substitui o `TESTAR`, que ficou mais curto)
+- [ ] Testar contra um servidor a sério, seguindo `docs/GUIA-TESTE.md` — o `GUIA` passou a usar o servidor local de `servidores/`, que já não precisa de instalar nada à mão
+- [ ] Testar numa versão que a biblioteca já conhece (1.21.4) para separar "o bot não entra" de "o 26.3 não é suportado"
 - [ ] Provar o Node 14.21.3 num Windows 7 a sério, de 32 e de 64 bits
 - [ ] Launcher que instale o Node certo conforme o Windows (ideia I-007)
 
 ## Problemas conhecidos
+
+- **O Mineflayer ainda não entra no Paper 26.3.** A negociação de protocolo passa (o patch do `src/versoes.js` é aplicado e aceito), e depois o `prismarine-chunk` atira `No chunk implementation for pc 26.3 found`, porque escolhe a implementação pelo nome da versão. É o mesmo problema que `registarFisicas()` resolve para a física, aplicado a `prismarine-chunk`, `prismarine-registry` e `prismarine-item`. Ninguém sabe ainda se, registados, os dados do 26.3 servem — é o que o teste a sério vai dizer.
+- **O nosso pedido de estado nunca funcionou contra um servidor a sério.** Só o primeiro servidor Paper real o denunciou: faltava o pacote do pedido (o handshake sozinho não chega) e faltava o comprimento à frente. Os testes antigos passavam porque só olhavam para o tamanho do pacote. Corrigido e agora provado contra o Paper 26.3.
 
 - **Nada foi testado a correr.** O `index.js` restaurado é o mesmo da v2.1 e não foi executado uma única vez nesta sessão. Antes de confiar em qualquer coisa, `npm install` e um teste num servidor de testes.
 - **Chaves do launcher alinhadas** — `error_no_version`, `error_node_fail` e as `msg_*` passaram para os três idiomas; os `lang/*.txt` têm agora as mesmas 69 chaves.
@@ -72,6 +78,21 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-30 (décima segunda sessão)
+
+**Feito — servidor de testes dentro do projecto**
+- `servidores/` com `baixar-paper.js` (descarrega pela API do PaperMC e confirma a soma SHA256), `arrancar.js`, e `modelo/` com `eula.txt` e `server.properties` versionados. O servidor em si, o mundo e o jar ficam de fora do git.
+- Descarregado e arrancado um **Paper 26.3** a sério: `Done (8.003s)!`, mundo plano e vazio, `online-mode=false`.
+- `test/servidor-real.js`: o primeiro teste que liga o Mineflayer a um servidor de verdade. Só aceita servidores locais, por segurança. Fica fora da verificação automática (marca `REQUER_SERVIDOR`), porque sem servidor a correr o resultado não quer dizer nada.
+
+**Achar um bug de meses thanks ao servidor real**
+- O nosso `pedidoEstado()` **nunca** funcionou contra um servidor real. Faltava o comprimento do pacote à frente, o nome e a porta, e — o mais difícil de ver — o **segundo pacote**: o handshake só diz "quero o estado", e sem o pedido em si o servidor fica à espera e nunca responde.
+- Os testes antigos davam `p.length >= 7`, por isso passavam com o pacote errado. Agora verificam os bytes todos.
+- Provado: `título: Paper 26.3 | protocolo: 777 | jogadores: 0/20`.
+
+**Onde o bot pára agora**
+- A negociação passa, o patch do 26.3 é aplicado e aceite, e a seguir o `prismarine-chunk` não conhece a versão. Está escrito nos *Problemas conhecidos* com o que é preciso fazer.
 
 ### 2026-09-30 (décima primeira sessão)
 
