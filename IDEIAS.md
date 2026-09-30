@@ -5,6 +5,7 @@
 - Estado: 💡 Nova · Registada: 2026-09-29
 - O quê: o `run.cpp` (ou um script novo) detecta a versão do Windows e instala o Node 14.21.3 no Windows 7 e o Node actual no Windows 10/11, em vez de instalar sempre o Node 22, que não corre no 7.
 - Porquê: requisito R1. Hoje o launcher nem sequer tem o MSI de que precisa, e mesmo com ele não funcionaria em Windows 7.
+- **Actualizado em 2026-09-30:** o código já corre em Node 14.21.3 (ver `docs/NODE-LEGADO.md`); falta o launcher instalar essa versão. A porta de versão do Mineflayer vendorizado aceita `AFK_NODE_MIN=14`.
 - Esforço: M · Impacto: alto
 - Toca em: `run.cpp`, READMEs, `package.json`
 - Notas: o MSI tem de ser descarregado de uma URL por plataforma (ou instalado a partir do `npx node@X`, que dá um Node portátil sem instalador — mais simples e sem privilégios de administrador). Ideia ligada a I-006.
@@ -24,7 +25,7 @@
 
 ### I-009 · Patch do Minecraft 26.3
 
-- Estado: 📦 Feita · Registada: 2026-09-29 · Feita: 2026-09-29 — `src/versoes.js`, 17 testes
+- Estado: 📦 Feita · Registada: 2026-09-29 · Feita: 2026-09-30 — `src/versoes.js`, 17 testes, e com o Mineflayer 4.39.0 vendorizado o patch passa a aplicar-se mesmo (a biblioteca 3.117 conhece o 26.1)
 - O quê: o `Tests` obriga a biblioteca `minecraft-data` a aceitar a versão 26.3 (que ainda não existe nos dados), remapeando os identificadores de pacote do protocolo e forçando o carregador de chunks. Foi escrito à mão e não tem teste.
 - Porquê: é o que permite entrar nas versões mais recentes (R2) sem esperar pela biblioteca.
 - Esforço: M · Impacto: alto

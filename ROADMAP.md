@@ -12,13 +12,13 @@ Registados a 2026-09-29 pelo dono do projecto. **Nenhuma fase pode quebrar isto*
 
 | # | Requisito | Como se garante |
 |---|---|---|
-| R1 | Correr em **Windows 7** (e Windows 10/11) | mínimo de Node **14.21.3** declarado em `package.json` (`engines.node`) e verificado por `verificar-node.mjs`; o launcher tem de instalar o Node certo conforme o Windows |
-| R2 | Funcionar nas **versões mais recentes do Minecraft** | matriz de versões testada e documentada; nada de fixar a versão no código; `src/versoes.js` prepara versões que a biblioteca ainda não conhece |
+| R1 | Correr em **Windows 7** (e Windows 10/11) | **resolvido em código (2026-09-30)**: o Mineflayer 4.39.0 é vendorizado e corrigido para o Node 14.21.3, e carrega nos dois. Falta provar num Windows 7 a sério — ver `docs/NODE-LEGADO.md` |
+| R2 | Funcionar nas **versões mais recentes do Minecraft** | **em código (2026-09-30)**: o Mineflayer 4.39.0 conhece 1.8.8 a 26.1, e `src/versoes.js` prepara o 26.3. Falta entrar num servidor real |
 | R3 | Funcionar com **mods de qualquer loader** (Forge, Fabric, NeoForge) | Fase 4 (sidecar local Via) + `docs/modded.md`; "por testar" é escrito até haver teste |
 
-Mínimo de Node em uso neste branch: **14.21.3** (última série do Node com suporte oficial a Windows 7). Estado verificado: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros compilam com o Node 14.21.3.
+Mínimo de Node em uso neste branch: **14.21.3** (verificado a carregar em ambos) (última série do Node com suporte oficial a Windows 7). Estado verificado: nenhuma das 156 dependências declara um `engines.node` acima de 14.21.3, e todos os ficheiros compilam com o Node 14.21.3.
 
-**Atenção — o outro branch usa um caminho diferente.** O branch `Tests` (código do amigo do dono do projecto) funciona em Windows 7 com o **Node 18.20.8 x86** e `NODE_SKIP_PLATFORM_CHECK=1`, com `mineflayer ^4.39.0`. Ou seja: R1 tem duas respostas concorrentes e **nenhuma foi testada com o Mineflayer real**. Decidir qual fica, e com teste, antes de prometer o mínimo.
+**Como R1 foi resolvido:** em vez de rebaixar o Mineflayer (o que matava o R2), vendorizámos o 4.39.0 e corrigimo-lo para o Node 14. O caminho do outro branch (Node 18.20.8 x86 com `NODE_SKIP_PLATFORM_CHECK=1`) fica como alternativa, mas o nosso é melhor: uma correcção em vez de uma variável de ambiente.
 
 ---
 

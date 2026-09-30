@@ -1,0 +1,36 @@
+{
+  "data": "2026-09-30",
+  "porque": "Mineflayer e dependências vendorizados/corrigidos para correr em Node antigo (Windows 7)",
+  "correccoes": [
+    {
+      "ficheiro": "vendor/mineflayer/lib/plugins/entities.js",
+      "porque": "??= só existe a partir do Node 15"
+    },
+    {
+      "ficheiro": "vendor/mineflayer/lib/plugins/sound.js",
+      "porque": "??= só existe a partir do Node 15"
+    },
+    {
+      "ficheiro": "vendor/mineflayer/lib/plugins/scoreboard.js",
+      "porque": "Object.hasOwn só existe a partir do Node 16.9"
+    },
+    {
+      "ficheiro": "vendor/mineflayer/index.js",
+      "porque": "a porta de versão exigia Node 18 e saía sem avisar"
+    },
+    {
+      "ficheiro": "vendor/mineflayer/package.json",
+      "porque": "engines pedia Node >= 22"
+    },
+    {
+      "pacote": "prismarine-block@1.23.0",
+      "ficheiro": "index.js",
+      "porque": "??= só existe a partir do Node 15"
+    },
+    {
+      "pacote": "minecraft-protocol@1.68.0",
+      "ficheiro": "src/server.js",
+      "porque": "||= só existe a partir do Node 15 (lado do servidor; corrigido por segurança)"
+    }
+  ]
+}

@@ -18,6 +18,9 @@
 - **Base decidida**: este branch. **Já portei tudo o que havia de aproveitável no outro branch**: patch do Minecraft 26.3 (`src/versoes.js`), movimento anti-AFK (`src/movimento.js`, `/andar`) e multi-bot (`src/sessoes.js`, `/bots`). **Por testar contra um servidor real** — nem o remapeamento de pacotes nem o movimento têm teste de integração.
 - **O `settings.json` do branch `Tests` está versionado** com o endereço de um servidor a sério. Não é copiado para aqui, e o branch não é nosso.
 
+- **Mineflayer vendorizado e corrigido para Node antigo** (2026-09-30): `vendor/mineflayer` (4.39.0) e cópias corrigidas de `prismarine-block` e `minecraft-protocol`. Carrega no Node 14.21.3 e no Node 22, e o patch do 26.3 aplica-se nos dois. Ver `docs/NODE-LEGADO.md`.
+- **Conta `offline` suportada** — já não é preciso uma conta premium para testar num servidor com `online-mode=false`.
+
 ## Em curso
 
 Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios, e um teste a correr contra um servidor a sério.
@@ -36,7 +39,9 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 3) Testar a detecção contra servidores reais de versões diferentes (1.8, 1.12, 1.16, 1.20, 1.21, 26.3)
 - [ ] (Fase 3) Traduzir os erros de protocolo mais comuns e dizer quando o servidor usa Via
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
-- [ ] Testar contra um servidor a sério, seguindo `docs/TESTAR.md`
+- [ ] Testar contra um servidor a sério, seguindo `docs/GUIA-TESTE.md` (o `GUIA` substitui o `TESTAR`, que ficou mais curto)
+- [ ] Provar o Node 14.21.3 num Windows 7 a sério, de 32 e de 64 bits
+- [ ] Launcher que instale o Node certo conforme o Windows (ideia I-007)
 
 ## Problemas conhecidos
 
@@ -67,6 +72,25 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-09-30 (décima primeira sessão)
+
+**Feito — o nosso Mineflayer, a correr em Node antigo**
+- O dono do projecto deixou em `resources/` o código do Mineflayer 4.39.0. Copiado para `vendor/mineflayer` e o `package.json` aponta para lá.
+- Actualização de todo o protocolo: `minecraft-data` 3.4.0 → **3.117.0** (de 50 para 72 versões, até ao 26.1), `minecraft-protocol` 1.35 → **1.68**, e o Mineflayer 4.0.0 → **4.39.0**. **Isto é o que resolve o requisito R2.**
+- Correções para o Node 14.21.3 (o último que corre nativamente no Windows 7, de 32 e 64 bits): três pontos de sintaxe/API no Mineflayer (`??=` duas vezes, `Object.hasOwn`), a porta de versão do `index.js`, e as mesmas correcções em `prismarine-block` e `minecraft-protocol`. Registo em `docs/PATCHES-NODE-LEGADO.json`.
+- **Verificado a correr:** o Mineflayer carrega no Node 14.21.3 (244 ms) e no Node 22, com `latestSupportedVersion` = 26.1, e o patch do 26.3 **aplica-se nos dois**. A criação do bot chega ao socket.
+- **Descoberta do caminho:** `overrides` do npm com `file:` chega a remover o pacote; a solução é declarar as cópias corrigidas como dependências `file:` directas.
+- As devDependencies das cópias vendorizadas foram removidas, senão o npm trazia mocha e jest para o projecto e a verificação de Node min dava falsos positivos.
+
+**Feito — conta `offline`**
+- `"type": "offline"` em `settings.json` deixa o bot entrar em servidores com `online-mode=false`, sem conta premium. É o que tornava o teste real possível.
+- `/typeinfo` explica os três tipos; as chaves novas estão nos três idiomas.
+
+**Honestidade sobre o que isto não prova**
+- Carregar não é entrar. Que o protocolo funcione ponta a ponta com o Node 14 numa máquina com o Node 14 **não foi provado**.
+- A autenticação Microsoft carrega no Node 14, mas o fluxo não foi testado. Por isso o `verificar-node.mjs` dá aviso, não erro.
+- O Node 14 de **32 bits** não foi testado (aqui só há x64).
 
 ### 2026-09-29 (décima sessão)
 
