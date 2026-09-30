@@ -23,6 +23,16 @@ nodeMsi/
 # Cópia de referência que o dono do projecto deixou
 resources/
 
+# Servidores de teste (servidores/paper-*): o jar do Paper são 50 MB, o mundo
+# são dezenas de MB, e o Paper escreve uma meia dúzia de ficheiros de
+# configuração que só fazem sentido nessa máquina. Versionamos o modelo e os
+# scripts, nunca o servidor.
+servidores/**/
+!servidores/modelo/
+*.jar
+*.pid
+papermc.jar
+
 # Configuração de IDE
 .idea/
 .vscode/

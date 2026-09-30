@@ -8,13 +8,48 @@
 
 const net = require('net')
 
+/** Escreve um inteiro com comprimento variável (VarInt) num array de bytes. */
+function escreverVarint(numero) {
+  const bytes = []
+  let valor = numero >>> 0
+  do {
+    let byte = valor & 0x7f
+    valor >>>= 7
+    if (valor !== 0) byte |= 0x80
+    bytes.push(byte)
+  } while (valor !== 0)
+  return bytes
+}
+
 /**
- * Pacote de pedido de estado (protocolo moderno):
- *   packet id 0x00 (handshake) · varint estado 1 (status) · varint protocolo
- *   string endereço · unsigned short porta · varint estado seguinte (1 = status)
+ * Pacote de handshake do protocolo moderno:
+ *
+ *   VarInt tamanho · packet id 0x00 · VarInt versão do protocolo
+ *   · VarInt + nome do servidor · unsigned short porta · VarInt estado seguinte
+ *
+ * O estado seguinte é 1 para o pedido de estado. O protocolo vai como -1
+ * ("não sei"), que é o que se usa antes de saber com quem se fala.
  */
-function pedidoEstado() {
-  return Buffer.from([0x00, 0x00, 0x01, 0x08, 0x00, 0x00, 0x00, 0x01])
+function handshake(host, porta, estadoSeguinte) {
+  const nome = Buffer.from(String(host), 'utf8')
+  const corpo = [0x00]
+    .concat(escreverVarint(-1))
+    .concat(escreverVarint(nome.length))
+    .concat(Array.from(nome))
+    .concat([(porta >> 8) & 0xff, porta & 0xff])
+    .concat(escreverVarint(estadoSeguinte))
+  return Buffer.from(escreverVarint(corpo.length).concat(corpo))
+}
+
+/**
+ * Os dois pacotes de um pedido de estado, o handshake e o pedido em si
+ * (id 0x00, corpo vazio). São **dois**: o handshake só diz "quero o estado";
+ * sem o segundo pacote o servidor fica à espera e nunca responde. Descobrir
+ * isto custou uma sessão de silêncio com o servidor, porque o handshake sozinho
+ * parece válido.
+ */
+function pedidoEstado(host = '', porta = 25565) {
+  return Buffer.concat([handshake(host, porta, 1), Buffer.from([0x01, 0x00])])
 }
 
 /** Lê uma string com comprimento variável em varint. */
@@ -27,7 +62,9 @@ function lerVarint(buffer, posicao) {
     valor |= (byte & 0x7f) << (7 * tamanho)
     pos += 1
     tamanho += 1
-    if ((byte & 0x80) === 0) return { valor, bytes: tamanho }
+    // `>>>` no fim: o protocolo trata a VarInt como sem sinal, e o writer
+    // escreve sem sinal. Sem isto, ler -1 dava -1 e escrever -1 dava 4294967295.
+    if ((byte & 0x80) === 0) return { valor: valor >>> 0, bytes: tamanho }
   }
   return { valor: 0, bytes: 0 }
 }
@@ -147,7 +184,7 @@ function criarPinger({ ligar, timeoutMs = 5000 } = {}) {
       })
 
       try {
-        socket.write(pedidoEstado())
+        socket.write(pedidoEstado(host, porta))
       } catch (err) {
         terminar({ ok: false, motivo: err.message })
       }
@@ -233,6 +270,8 @@ function descreverServidor(ping) {
 
 module.exports = {
   pedidoEstado,
+  handshake,
+  escreverVarint,
   lerVarint,
   analisarResposta,
   criarPinger,

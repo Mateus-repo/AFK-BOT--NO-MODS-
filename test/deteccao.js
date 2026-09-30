@@ -71,10 +71,65 @@ class SocketFalso {
 console.log('\ndetecção do servidor')
 
 // -------------------------------------------------------------- pedido/varint
-teste('o pacote de pedido tem o tamanho certo', () => {
-  const p = deteccao.pedidoEstado()
-  assert.ok(Buffer.isBuffer(p))
-  assert.ok(p.length >= 7, `esperava ao menos 7 bytes, veio ${p.length}`)
+teste('o pedido de estado tem os dois pacotes que o protocolo pede', () => {
+  // Isto é o que faltava e fazia o servidor nunca responder: mandávamos só o
+  // handshake. O handshake diz "quero o estado"; falta o pacote que pergunta.
+  // Os dois testes antigos só olhavam para o primeiro, por isso passavam.
+  const p = deteccao.pedidoEstado('exemplo.pt', 25565)
+  const tamanho = deteccao.lerVarint(p, 0)
+  const tamanhoHandshake = tamanho.valor + tamanho.bytes
+  assert.strictEqual(tamanhoHandshake + 2, p.length, 'o pedido tem de ser o handshake mais 2 bytes')
+  assert.deepStrictEqual(
+    Array.from(p.slice(tamanhoHandshake)),
+    [0x01, 0x00],
+    'o segundo pacote é o pedido de estado: id 0x01 com corpo vazio'
+  )
+})
+
+teste('o handshake começa pelo tamanho do pacote', () => {
+  // Sem este VarInt à frente, o servidor lia o identificador como tamanho e
+  // fechava a ligação sem responder.
+  const p = deteccao.handshake('exemplo.pt', 25565, 1)
+  const tamanho = deteccao.lerVarint(p, 0)
+  assert.strictEqual(tamanho.valor, p.length - tamanho.bytes, 'o tamanho tem de ser o resto do pacote')
+  assert.strictEqual(p[tamanho.bytes], 0x00, 'e a seguir vem o identificador do handshake')
+})
+
+teste('o handshake leva o nome do servidor e a porta', () => {
+  const p = deteccao.handshake('exemplo.pt', 25565, 1)
+  let pos = deteccao.lerVarint(p, 0).bytes
+  assert.strictEqual(p[pos], 0x00, 'identificador do handshake')
+  pos += 1
+
+  pos += deteccao.lerVarint(p, pos).bytes // protocolo (-1, o cliente não sabe ainda)
+
+  const tamanho = deteccao.lerVarint(p, pos)
+  pos += tamanho.bytes
+  assert.strictEqual(p.slice(pos, pos + tamanho.valor).toString('utf8'), 'exemplo.pt')
+  pos += tamanho.valor
+
+  assert.strictEqual(p[pos] * 256 + p[pos + 1], 25565, 'a porta vai em dois bytes')
+  pos += 2
+  assert.strictEqual(deteccao.lerVarint(p, pos).valor, 1, 'estado seguinte = 1 (estado)')
+})
+
+teste('o handshake aguenta nomes de servidor com caracteres especiais', () => {
+  const nome = 'jogo.exemplo.pt'
+  const p = deteccao.handshake(nome, 25566, 1)
+  let pos = deteccao.lerVarint(p, 0).bytes + 1
+  pos += deteccao.lerVarint(p, pos).bytes
+  const tamanho = deteccao.lerVarint(p, pos)
+  pos += tamanho.bytes
+  assert.strictEqual(p.slice(pos, pos + tamanho.valor).toString('utf8'), nome)
+  pos += tamanho.valor
+  assert.strictEqual(p[pos] * 256 + p[pos + 1], 25566)
+})
+
+teste('a escrita de varint volta a dar o mesmo número que a leitura', () => {
+  for (const n of [0, 1, 127, 128, 300, 25565, 5023, 0xffffffff]) {
+    const bytes = deteccao.escreverVarint(n)
+    assert.strictEqual(deteccao.lerVarint(Buffer.from(bytes), 0).valor, n, `falhou em ${n}`)
+  }
 })
 
 teste('a leitura de varint lê números de um e de dois bytes', () => {
