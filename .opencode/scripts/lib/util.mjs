@@ -16,6 +16,9 @@ export const SKIP_DIRS = new Set([
   'nodeMsi',
   'logs',
   'old-deprecated-10.1',
+  // Cópia de referência que o dono do projecto deixou, sem versionar. O código
+  // que corre é o de vendor/, e é esse que a verificação tem de vigiar.
+  'resources',
 ])
 
 /**

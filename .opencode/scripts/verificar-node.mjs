@@ -125,7 +125,15 @@ if (fs.existsSync(modulos)) {
 // ------------------------------------------------------- 2. sintaxe no Node mínimo
 const sintaxe = { executado: false, motivo: null, ficheiros: [], falhas: [] }
 if (!rapido) {
-  const ficheiros = listFiles(root).filter((f) => f.endsWith('.js') || f.endsWith('.mjs'))
+  const ficheiros = listFiles(root).filter(
+    (f) =>
+      (f.endsWith('.js') || f.endsWith('.mjs')) &&
+      // Os testes do Mineflayer vendorizado precisam de um servidor a sério e de
+      // dependências de desenvolvimento que removemos. Não correm connosco, logo
+      // a sintaxe deles não é um bloqueio para o nosso Node mínimo.
+      !/(^|\/)(test|tests|__tests__)\//.test(f) &&
+      !/^vendor\/.*\/(test|examples)\//.test(f)
+  )
   // No Windows o npx é um .cmd, por isso precisa de shell para ser executado.
   const correr = (argsNpx) =>
     execFileSync('npx', argsNpx, { cwd: root, encoding: 'utf8', stdio: 'pipe', shell: true })
