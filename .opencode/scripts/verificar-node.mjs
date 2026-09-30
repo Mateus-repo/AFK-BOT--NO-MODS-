@@ -68,6 +68,16 @@ const modulos = path.join(root, 'node_modules')
 const dependencias = []
 let total = 0
 let comEngines = 0
+let ignoradosDev = 0
+
+// Ferramentas de desenvolvimento: não correm com o bot, por isso o Node mínimo
+// delas não interessa. Entram por arrastamento quando se vendoriza um pacote.
+const E_DEV = /^(jest|@jest\/|mocha|chai|expect|pretty-format|standard|eslint|@eslint\/|jsdoc|typedoc|doctoc|ts-node|typescript|@types\/|rimraf|nodemon|coveralls|c8|nyc|webpack|rollup|husky|lint-staged|only-allow|env-ci|uvu|tap|ava)/
+
+// Só são carregadas na autenticação Microsoft. Declaram Node >= 16 mas carregam
+// no Node 14 (verificado a 2026-09-30). A autenticação Microsoft em Node antigo
+// não foi testada a correr, por isso contam como aviso, não como erro.
+const CONDICIONAIS_NODE = new Set(['@azure/msal-node', '@xboxreplay/xboxlive-auth'])
 
 function verPasta(pasta, nome) {
   const pkgPath = path.join(pasta, 'package.json')
@@ -79,11 +89,18 @@ function verPasta(pasta, nome) {
     return
   }
   total++
+  const nomeBase = nome.split(' > ')[0]
+  if (E_DEV.test(nomeBase)) {
+    ignoradosDev++
+    return
+  }
   const engines = pkg.engines && pkg.engines.node
   if (engines) {
     comEngines++
     const menor = menorDeclarado(engines)
-    if (menor && acima(menor)) dependencias.push({ nome, engines, menor })
+    if (menor && acima(menor)) {
+      dependencias.push({ nome, engines, menor, condicional: CONDICIONAIS_NODE.has(nomeBase) })
+    }
   }
   for (const dep of Object.keys(pkg.dependencies || {})) {
     const sub = path.join(pasta, 'node_modules', dep)
@@ -133,9 +150,10 @@ const relatorio = {
   minimo: MINIMO,
   pacotesAnalisados: total,
   comEngines,
+  ignoradosDev,
   dependencias,
   sintaxe,
-  ok: dependencias.length === 0 && sintaxe.falhas.length === 0,
+  ok: dependencias.filter((d) => !d.condicional).length === 0 && sintaxe.falhas.length === 0,
 }
 
 if (comoJson) {
@@ -144,15 +162,31 @@ if (comoJson) {
 }
 
 out.titulo(`Compatibilidade com Node ${MINIMO}`)
-console.log(`  pacotes analisados: ${total} (com "engines.node": ${comEngines})`)
+console.log(
+  `  pacotes analisados: ${total} (com "engines.node": ${comEngines}, ignorados por serem de desenvolvimento: ${ignoradosDev})`
+)
 if (!fs.existsSync(modulos)) {
   console.log('  !    node_modules ausente — nada a analisar')
 } else if (dependencias.length === 0) {
-  out.ok('nenhum pacote declara um mínimo acima do mínimo do projecto')
+  out.ok('nenhum pacote de execução declara um mínimo acima do mínimo do projecto')
 } else {
-  out.erro(`${dependencias.length} pacote(s) acima do mínimo:`)
-  for (const d of dependencias.sort((a, b) => a.nome.localeCompare(b.nome))) {
-    console.log(`     ${d.nome}  engines.node="${d.engines}" (mínimo ${d.menor})`)
+  const bloqueantes = dependencias.filter((d) => !d.condicional)
+  const condicionais = dependencias.filter((d) => d.condicional)
+  if (bloqueantes.length) {
+    out.erro(`${bloqueantes.length} pacote(s) acima do mínimo:`)
+    for (const d of bloqueantes.sort((a, b) => a.nome.localeCompare(b.nome))) {
+      console.log(`     ${d.nome}  engines.node="${d.engines}" (mínimo ${d.menor})`)
+    }
+  } else {
+    out.ok('nenhum pacote de execução acima do mínimo')
+  }
+  if (condicionais.length) {
+    out.aviso(
+      `${condicionais.length} pacote(s) só da autenticação Microsoft pedem Node ${condicionais[0].menor}; com Node ${MINIMO} ficam mojang e offline`
+    )
+    for (const d of condicionais.slice(0, 4)) {
+      console.log(`     ${d.nome}  engines.node="${d.engines}"`)
+    }
   }
 }
 

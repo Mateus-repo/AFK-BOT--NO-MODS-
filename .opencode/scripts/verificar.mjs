@@ -285,11 +285,25 @@ if (!pkg) {
       if (!dados.minimo) {
         nota('aviso', 'node', 'sem "engines": { "node": ">=X.Y.Z" } no package.json — não há versão mínima declarada')
       } else if (dados.dependencias && dados.dependencias.length) {
-        for (const d of dados.dependencias.slice(0, 8)) {
+        // Os pacotes que só a autenticação Microsoft usa são aviso, não erro:
+        // carregam no Node mínimo, mas o fluxo Microsoft não foi testado lá.
+        const bloqueantes = dados.dependencias.filter((d) => !d.condicional)
+        const condicionais = dados.dependencias.filter((d) => d.condicional)
+        for (const d of bloqueantes.slice(0, 8)) {
           nota('erro', 'node', `${d.nome} exige Node ${d.menor} (engines.node="${d.engines}") e o mínimo do projecto é ${dados.minimo}`)
         }
-        if (dados.dependencias.length > 8) {
-          nota('erro', 'node', `...e mais ${dados.dependencias.length - 8} pacote(s)`)
+        if (bloqueantes.length > 8) {
+          nota('erro', 'node', `...e mais ${bloqueantes.length - 8} pacote(s)`)
+        }
+        if (condicionais.length) {
+          nota(
+            'aviso',
+            'node',
+            `a autenticação Microsoft pede Node ${condicionais[0].menor} em ${condicionais.length} pacote(s): com Node ${dados.minimo} ficam mojang e offline (${condicionais.map((d) => d.nome.split(' > ')[0]).join(', ')})`
+          )
+        }
+        if (!bloqueantes.length) {
+          out.ok(`dependências de execução compatíveis com Node ${dados.minimo} (${dados.pacotesAnalisados} pacotes)`)
         }
       } else {
         out.ok(`dependências compatíveis com Node ${dados.minimo} (${dados.pacotesAnalisados} pacotes)`)
