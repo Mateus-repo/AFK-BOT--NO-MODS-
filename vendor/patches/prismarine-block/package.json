@@ -1,0 +1,40 @@
+{
+  "name": "prismarine-block",
+  "version": "1.23.0",
+  "description": "Represent a minecraft block with its associated data",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec --exit",
+    "pretest": "npm run lint",
+    "fix": "standard --fix",
+    "lint": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PrismarineJS/prismarine-block.git"
+  },
+  "dependencies": {
+    "minecraft-data": "^3.38.0",
+    "prismarine-biome": "^1.1.0",
+    "prismarine-chat": "^1.5.0",
+    "prismarine-item": "^1.10.1",
+    "prismarine-nbt": "^2.0.0",
+    "prismarine-registry": "^1.1.0"
+  },
+  "keywords": [
+    "prismarine",
+    "minecraft",
+    "block",
+    "js"
+  ],
+  "author": "Romain Beaumont <romain.rom1@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PrismarineJS/prismarine-block/issues"
+  },
+  "afkbot": {
+    "copiadoDe": "Mineflayer 4.39.0 (upstream) e dependências seleccionadas",
+    "alteracoes": "docs/PATCHES-NODE-LEGADO.json",
+    "razao": "correr em Node antigo (Windows 7) e controlar o código"
+  }
+}

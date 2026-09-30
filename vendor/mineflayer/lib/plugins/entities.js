@@ -158,7 +158,7 @@ function inject (bot) {
   const entityDataByInternalId = Object.fromEntries(bot.registry.entitiesArray.map((e) => [e.internalId, e]))
 
   function setEntityData (entity, type, entityData) {
-    entityData ??= entityDataByInternalId[type]
+    if (entityData === undefined || entityData === null) entityData = entityDataByInternalId[type]
     if (entityData) {
       entity.type = entityData.type || 'object'
       entity.displayName = entityData.displayName

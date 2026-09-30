@@ -29,7 +29,7 @@ function inject (bot) {
     }
 
     if (packet.action === 2) {
-      if (!Object.hasOwn(scoreboards, packet.name)) {
+      if (!Object.prototype.hasOwnProperty.call(scoreboards, packet.name)) {
         bot.emit('error', new Error(`Received update for unknown objective ${packet.name}`))
         return
       }

@@ -37,7 +37,7 @@ function inject (bot) {
     }
 
     // If we have an ID but no name yet, try to look it up in the registry
-    soundName ??= bot.registry?.sounds?.[soundId]?.name
+    if (soundName === undefined || soundName === null) soundName = bot.registry?.sounds?.[soundId]?.name
 
     if (soundName) {
       bot.emit('soundEffectHeard', soundName, pt, volume, pitch)
