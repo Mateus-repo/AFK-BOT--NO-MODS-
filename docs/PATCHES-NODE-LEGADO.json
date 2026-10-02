@@ -1,6 +1,10 @@
 {
   "data": "2026-09-30",
-  "porque": "Mineflayer e dependências vendorizados/corrigidos para correr em Node antigo (Windows 7)",
+  "porque": "Mineflayer e dependências vendorizados/corrigidos. Há dois tipos de correcção: as de Node antigo (para o Windows 7) e as de protocolo (para o Minecraft mais recente). As duas vão neste ficheiro porque as duas mexem em vendor/.",
+  "tipos": {
+    "node-antigo": "Sintaxe ou APIs que só existem a partir do Node 15/16. Só interessam no Windows 7.",
+    "protocolo-26.3": "O Minecraft 26.3 não é_valido pela minecraft-data. Descobrimos isto a falar com um servidor Paper 26.3 a sério."
+  },
   "correccoes": [
     {
       "ficheiro": "vendor/mineflayer/lib/plugins/entities.js",
@@ -31,6 +35,27 @@
       "pacote": "minecraft-protocol@1.68.0",
       "ficheiro": "src/server.js",
       "porque": "||= só existe a partir do Node 15 (lado do servidor; corrigido por segurança)"
+    },
+    {
+      "tipo": "protocolo-26.3",
+      "ficheiro": "vendor/mineflayer/lib/plugins/physics.js",
+      "funcao": "answerTeleport",
+      "porque": "No 26.3 o pacote teleport_confirm passou a levar as coordenadas do teleporte (x, y, z, yRot, xRot). O Mineflayer só mandava o teleportId, e o servidor respondia 'invalid player movement' e expulsava o bot logo a seguir a entrar no mundo. Só se mandam as coordenadas quando a posição existe, para não partir nada em versões antigas.",
+      "provado": "contra um Paper 26.3 a correr, 2026-10-02"
+    },
+    {
+      "tipo": "protocolo-26.3",
+      "ficheiro": "vendor/mineflayer/lib/plugins/blocks.js",
+      "funcao": "addColumn",
+      "porque": "A leitura da luz dos chunks no 26.3 rebenta, porque a luz vem noutro pacote e as máscaras não batem certo. Antes, essa excepção acontecia a ANTES de guardar o chunk no mundo, por isso o jogador ficava sem blocos e nunca aterrava. Passou a ser lida em try/catch à parte: perder a luz é tolerável num bot de AFK, perder o chunk não.",
+      "provado": "contra um Paper 26.3 a correr, 2026-10-02"
+    }
+  ],
+  "ainda_aberto": [
+    {
+      "assunto": "26.3: o jogador nunca fica com onGround verdadeiro",
+      "situacao": "O bloco debaixo dos pés é lido correctamente (grass_block) mas a física não o reconhece, por isso o servidor expulsa o bot por movimento inválido. A prismarine-physics escolhe o comportamento pelas features de majorVersion.",
+      "conclusao": "Não é remapeamento de identificadores de pacote: é o formato dos dados do chunk e da física. Arranjar isto à mão é adivinhar; o caminho certo é a minecraft-data ganhar dados do 26.3, ou ViaVersion no servidor para se falar um protocolo que já conhecemos."
     }
   ]
 }

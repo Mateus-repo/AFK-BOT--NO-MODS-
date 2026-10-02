@@ -41,6 +41,13 @@ function inject (bot, { version, storageBuilder, hideErrors }) {
     bot.world.unloadColumn(chunkX, chunkZ)
   }
 
+  let luzAvisada = false
+  function avisarLuzUmaVez (erro) {
+    if (luzAvisada) return
+    luzAvisada = true
+    bot.emit('warn', `luz dos chunks não pôde ser lida (${erro.message}); os blocos continuam a carregar`)
+  }
+
   function addColumn (args) {
     if (!args.bitMap && args.groundUp) {
       // stop storing the chunk column
@@ -58,8 +65,16 @@ function inject (bot, { version, storageBuilder, hideErrors }) {
       if (args.biomes !== undefined) {
         column.loadBiomes(args.biomes)
       }
-      if (args.skyLight !== undefined) {
-        column.loadParsedLight(args.skyLight, args.blockLight, args.skyLightMask, args.blockLightMask, args.emptySkyLightMask, args.emptyBlockLightMask)
+      // A luz é lida em separado e em try/catch à parte, de propósito. No
+      // 26.3 a luz dos chunks vem noutro pacote e este parser queixa-se; se
+      // isso deitasse o chunk fora, o jogador ficava sem blocos e não andava
+      // de todo. Perder a luz é tolerável num bot de AFK, perder o chunk não.
+      try {
+        if (args.skyLight !== undefined) {
+          column.loadParsedLight(args.skyLight, args.blockLight, args.skyLightMask, args.blockLightMask, args.emptySkyLightMask, args.emptyBlockLightMask)
+        }
+      } catch (luzErro) {
+        avisarLuzUmaVez(luzErro)
       }
       bot.world.setColumn(args.x, args.z, column)
     } catch (e) {

@@ -463,7 +463,22 @@ function inject (bot, { physicsEnabled, maxCatchupTicks }) {
 
   function answerTeleport (teleportId, pos, yaw, pitch) {
     if (bot.supportFeature('teleportUsesOwnPacket')) {
-      bot._client.write('teleport_confirm', { teleportId })
+      // 26.3+: o pacote passou a levar as coordenadas do teleporte. Sem elas
+      // o servidor responde "invalid player movement" e expulsa o bot logo a
+      // seguir a entrar no mundo. Só se mandam quando a posição existe, para
+      // não partir nada em versões antigas.
+      if (pos) {
+        bot._client.write('teleport_confirm', {
+          teleportId,
+          x: pos.x,
+          y: pos.y,
+          z: pos.z,
+          yRot: yaw,
+          xRot: pitch
+        })
+      } else {
+        bot._client.write('teleport_confirm', { teleportId })
+      }
     }
 
     const confirmMove = () => {
