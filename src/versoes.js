@@ -55,6 +55,18 @@ function paraHexa(num) {
   return '0x' + num.toString(16).padStart(2, '0')
 }
 
+/** O dataVersion da versão base, tal como a biblioteca o registra. */
+function dataVersionDe(minecraftData, versao) {
+  try {
+    const lista = minecraftData && minecraftData.versions && minecraftData.versions.pc
+    if (!Array.isArray(lista)) return null
+    const achado = lista.find((v) => v.minecraftVersion === versao)
+    return achado && achado.dataVersion != null ? achado.dataVersion : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Remapeia os identificadores de um mapa { '0x00': 'nome' } para a 26.3.
  * Função pura: devolve um mapa novo e não toca no original.
@@ -102,12 +114,22 @@ function pacoteTeleportConfirm() {
 function instalar({ alvo, base, data, minecraftData, mineflayerVersion, log, t }) {
   const versao = {
     minecraftVersion: alvo,
+    // O número de protocolo é o que o servidor respondeu ao pedido de estado
+    // (o Paper 26.3 respondeu 777). O dataVersion é o da base: o patch copia os
+    // dados da base, logo as features são as da base, e inventar um número
+    // maior estragaria todas as comparações.
     version: alvo === '26.3' ? 777 : undefined,
-    dataVersion: alvo === '26.3' ? 5023 : undefined,
     usesNetty: true,
-    majorVersion: alvo,
+    // majorVersion NÃO é a versão: é a chave do formato de dados. É por ela que
+    // as bibliotecas prismarine escolhem a implementação (o prismarine-chunk
+    // tem `26.1` e não tem `26.3`). O 26.3 partilha o formato do 26.1, por isso
+    // fica a apontar para lá — senão o Mineflayer morria com
+    // "No chunk implementation for pc 26.3 found" logo a seguir à ligação.
+    majorVersion: base,
     releaseType: 'release'
   }
+  const daBase = dataVersionDe(minecraftData, base)
+  if (daBase != null) versao.dataVersion = daBase
 
   try {
     if (!data || !data.pc) return { aplicada: false, motivo: 'sem dados de versões' }
@@ -141,6 +163,7 @@ function instalar({ alvo, base, data, minecraftData, mineflayerVersion, log, t }
     if (minecraftData && minecraftData.supportedVersions && !minecraftData.supportedVersions.pc.includes(alvo)) {
       minecraftData.supportedVersions.pc.push(alvo)
     }
+    registarIndice(minecraftData, alvo, versao)
     if (mineflayerVersion && !mineflayerVersion.testedVersions.includes(alvo)) {
       mineflayerVersion.testedVersions.push(alvo)
       mineflayerVersion.latestSupportedVersion = alvo
@@ -151,6 +174,35 @@ function instalar({ alvo, base, data, minecraftData, mineflayerVersion, log, t }
   } catch (err) {
     if (log && t) log(`${t('version_patch_failed')} ${err.message}`, 'WARN')
     return { aplicada: false, motivo: err.message }
+  }
+}
+
+/**
+ * Regista a versão nova no índice da `minecraft-data`. Sem isto, o `dataVersion`
+ * dela dá 0, e TODAS as feature flags passam a dar `false` — o bot liga-se,
+ * entra no mundo, e a seguir o servidor expulsa-o por movimento inválido
+ * porque a física decide mandar pacotes de outra maneira.
+ *
+ * O `dataVersion` é o da versão base, não um número inventado: o patch copia os
+ * dados da base, logo as features correctas são as da base. Ser coerente é
+ * melhor do que adivinhar um número.
+ */
+function registarIndice(minecraftData, alvo, versao) {
+  if (!minecraftData || !minecraftData.versions) return false
+  try {
+    const lista = minecraftData.versions.pc
+    if (Array.isArray(lista) && !lista.some((v) => v.minecraftVersion === alvo)) {
+      lista.push(versao)
+    }
+    if (minecraftData.versionsByMinecraftVersion && minecraftData.versionsByMinecraftVersion.pc) {
+      minecraftData.versionsByMinecraftVersion.pc[alvo] = versao
+    }
+    if (minecraftData.versionsByMajorVersion && minecraftData.versionsByMajorVersion.pc) {
+      minecraftData.versionsByMajorVersion.pc[alvo] = versao
+    }
+    return true
+  } catch {
+    return false
   }
 }
 
