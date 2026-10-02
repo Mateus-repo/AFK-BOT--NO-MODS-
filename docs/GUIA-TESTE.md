@@ -136,6 +136,16 @@ O `online-mode` importa: com `online-mode=true` o servidor exige uma conta
 verificada e rejeita o bot com `unverified_username`. Para testes, um servidor
 em modo offline chega.
 
+### Servidores grátis (Aternos e afins)
+
+Estes servidores **cortam quando ficam vazios** e reiniciam com um mundo novo,
+por isso:
+
+- o teste tem de arrancar logo a seguir ao servidor ficar de pé;
+- o mundo pode mudar a meio da execução. O teste trata isso como o que é — um
+  teleporte do servidor — e recomeça a medir a partir daí, em vez de dar o
+  movimento por teletransporte do bot.
+
 ## Testar no Windows 7
 
 O Windows 7 é o problema conhecido do projecto: lá o Java 8 é o último que

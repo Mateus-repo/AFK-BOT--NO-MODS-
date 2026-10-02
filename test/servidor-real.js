@@ -203,11 +203,20 @@ const resultado = await new Promise((resolve) => {
     let anterior = { x: pos.x, z: pos.z }
     let maiorPasso = 0
     let conta = 0
+    let teleportes = 0
     const intervalo = setInterval(() => {
       if (!bot || !bot.entity) return
       conta += 1
       const p = bot.entity.position
       const passo = Math.hypot(p.x - anterior.x, p.z - anterior.z)
+      // Um salto grande não é o bot a andar: é o servidor a movê-lo (teleporte,
+      // ou o mundo a ser recriado a meio, que o Aternos faz ao reiniciar). Nesses
+      // casos reassumimos a posição de origem e não contamos como passo.
+      if (passo > 20) {
+        teleportes += 1
+        anterior = { x: p.x, z: p.z }
+        return
+      }
       if (passo > maiorPasso) maiorPasso = passo
       anterior = { x: p.x, z: p.z }
       if (conta >= 40) {
@@ -220,6 +229,7 @@ const resultado = await new Promise((resolve) => {
           `um passo de ${maiorPasso.toFixed(2)} blocos num tique é impossível`
         )
         console.log(`        depois de ${conta} amostras: X ${p.x.toFixed(2)} Z ${p.z.toFixed(2)}`)
+        if (teleportes) console.log(`        (${teleportes} teleporte(s) do servidor, ignorados)`)
         if (errosDeLuz) {
           console.log(`        (${errosDeLuz} queixa(s) de luz dos chunks, ignoradas — ver PROGRESSO.md)`)
         }
