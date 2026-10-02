@@ -99,6 +99,43 @@ O que **não** prova: contas premium, anticheat, nem servidores com mods.
 | `Outdated client!` | a versão do bot é mais antiga que a do servidor |
 | `excepção solta: [Prismarine-chunk]` | uma biblioteca não conhece a versão. É o ponto em que o 26.3 está hoje |
 
+## Testar contra um servidor 26.3
+
+A `minecraft-data` **não conhece o 26.3** (a mais recente é a 3.117.0, e a mais
+recente que inclui é a 26.1). O remapeamento de identificadores de pacote do
+`src/versoes.js` chega a pôr o bot no mundo, mas o servidor expulsa-o logo a
+seguir: `Invalid move player packet received`. Não tem a ver com mods nem com
+Fabric — acontece igual num servidor vanilla.
+
+A saída é o **ViaVersion**, que traduz o protocolo no servidor. Com ele, o bot
+fala uma versão que já conhece e nunca precisa de remapear nada:
+
+```bash
+AFK_TESTE_HOST=exemplo.aternos.me \
+AFK_TESTE_PORTA=64083 \
+AFK_TESTE_VERSAO=1.21 \
+AFK_TESTE_PERMITIR_REMOTO=1 \
+node test/servidor-real.js
+```
+
+- `AFK_TESTE_VERSAO` é **a versão que nós falamos**, não a do servidor. O
+  pedido de estado mostra a versão real do servidor; se for mais recente, é
+  ViaVersion a traduzir.
+- `AFK_TESTE_PERMITIR_REMOTO=1` é obrigatório para qualquer coisa que não seja
+  `localhost`. Sem ele o teste recusa-se: apontar isto para um servidor alheio
+  não pode ser uma omissão.
+- Num servidor **Fabric** o Via tem de ser o **ViaFabric** (o ViaFabricPlus é
+  só para clientes — o `fabric.mod.json` dele diz `"environment": "client"`).
+  Com o ViaFabric só, aceitam-se clientes *mais recentes* que a versão do
+  servidor, que não existem, por isso convém juntar o **ViaBackwards** (1.9+)
+  e o **ViaRewind** (1.7/1.8).
+- Num servidor **Paper/Bukkit/Spigot** usa-se o **ViaVersion** normal, em vez do
+  ViaFabric.
+
+O `online-mode` importa: com `online-mode=true` o servidor exige uma conta
+verificada e rejeita o bot com `unverified_username`. Para testes, um servidor
+em modo offline chega.
+
 ## Testar no Windows 7
 
 O Windows 7 é o problema conhecido do projecto: lá o Java 8 é o último que

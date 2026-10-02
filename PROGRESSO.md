@@ -85,6 +85,29 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 ## Diário de sessões
 
 
+### 2026-10-02 (décima quinta sessão)
+
+**O bot entrou num servidor 26.3 remoto, a sério**
+- Servidor Aternos do dono do projecto: **Fabric 26.3 com ViaFabric + ViaBackwards + ViaRewind**, em modo offline. O log do servidor confirma `ViaVersion detected server version: 26.3 (777)`.
+- Falando **1.21** (protocolo 767, que a `minecraft-data` conhece), o bot entra no mundo de sobrevivência a sério e mexe-se: **7 de 7 verificações**. O ViaBackwards traduz os pacotes, e o bot nunca soube que estava a falar com um 26.3.
+- O log dá a prova lado a lado:
+  - `18:46:43 bot_teste_real logged in ... at (-477.5, 70.0, 257.5)` → `18:46:44 lost connection: Invalid move player packet received` (tentativa a falar 26.3 nativamente)
+  - `18:47:42 bot_teste_real logged in ... / joined the game` e **nada mais** (tentativa a falar 1.21)
+- Isto fecha o requisito R2 por interposta pessoa: o bot entra num 26.3. O que ainda não provámos é entrar **sem** o Via, falando 26.3 nativamente — e isso depende de dados que a `minecraft-data` ainda não tem.
+
+### 2026-10-02 (décima quarta sessão)
+
+**O 26.3 falha até num servidor vanilla de fora**
+- O dono do projecto pôs **ViaFabric + ViaBackwards + ViaRewind** no servidor dele (Fabric 26.3) e encostou 13 protocolos, do 26.3 ao 1.8.9. ViaVersion está confirmado a funcionar.
+- O bot ficou lá bloqueado por outra coisa: `unverified_username`, porque o servidor está com `online-mode=true` e o teste liga com conta `offline`. Para esse servidor o caminho é uma conta real, ou `online-mode=false` temporário.
+- Depois criei um servidor **Aternos 26.3** (vanilla, modo offline) para teste sem tocar em nada do dono do projecto. Resultado: **o bot entra no mundo e é expulso pelo mesmo motivo** (`invalid player movement`), num mundo de sobrevivência a sério (Y=70).
+- Isto é a prova de que o problema do 26.3 **não tem nada a ver com mods, nem com Fabric, nem com ViaVersion**. É o formato dos dados e da física do 26.3, que a `minecraft-data` não tem.
+- Para testar a sério contra um servidor remoto, o caminho é um Aternos numa versão que a biblioteca conhece. O `1.21` funciona (7 de 7 contra o Paper local).
+
+**Duas correcões pequenas ao teste**
+- O cabeçalho dizia "Paper 1.21" Hardcoded, quando o `AFK_TESTE_VERSAO` é a versão que *nós* falamos, não a do servidor. Passa a dizer isso, e depois mostra o título que o servidor devolveu.
+- Quando o protocolo do servidor não é de nenhuma versão conhecida, o teste explica o que fazer em vez de falhar calado.
+
 ### 2026-10-02 (décima terceira sessão)
 
 **Feito — o bot entrou num servidor a sério, pela primeira vez**
