@@ -61,7 +61,7 @@ function verificar(nome, condicao, detalhe) {
 }
 
 async function principal() {
-console.log(`\nligação a sério — ${HOST}:${PORTA} (Paper ${VERSAO})`)
+console.log(`\nligação a sério — ${HOST}:${PORTA}, a falar ${VERSAO}`)
 
 if (!LOCAIS.includes(HOST) && !PERMITE_REMOTO) {
   console.log(`  este teste só aceita servidores locais. Recebi "${HOST}".`)
@@ -119,6 +119,12 @@ if (ping.ok) {
     conhecidas: deteccao.versoesConhecidas()
   })
   console.log(`        "auto" escolheria: ${escolha.versao || '(nenhuma)'} — ${escolha.motivo || 'ok'}`)
+  if (escolha.suportada === false) {
+    console.log(`        Nota: o servidor fala o protocolo ${ping.protocolo} e nenhuma versão`)
+    console.log(`        conhecida da biblioteca usa esse número. Se o servidor tiver ViaVersion,`)
+    console.log(`        aponta o teste para uma versão conhecida (AFK_TESTE_VERSAO=1.21) e o Via`)
+    console.log(`        traduz o resto.`)
+  }
 }
 
 // ---- 2. entrar com o Mineflayer a sério
