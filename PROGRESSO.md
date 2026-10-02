@@ -23,6 +23,10 @@
 
 ## Em curso
 
+**O 26.3 está bloqueado por dados, não por código.** O bot entra no mundo do Paper 26.3 e aguenta, mas nunca fica com `onGround` verdadeiro, e o servidor expulsa-o por movimento inválido. O bloco debaixo dos pés é lido bem (`grass_block`), logo o problema não é o remapeamento de identificadores: é o formato dos dados do chunk e o comportamento da física. Arranjar isso à mão é adivinhar.
+
+Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios.
+
 Fase 3: já há um servidor Paper 26.3 local a correr e o nosso pedido de estado **responde** contra ele. A ligação do Mineflayer já negocia o protocolo e rebenta a seguir, no `prismarine-chunk`, que também não conhece o 26.3 (ver *Problemas conhecidos*).
 
 Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos próprios.
@@ -33,7 +37,7 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 2) Separar o `index.js` monolítico em módulos (configuração, idiomas, log, ligação, comandos)
 - [ ] (Fase 2) Testar o **multi-bot** num servidor a sério (nomes repetidos, kicked, limites de jogadores)
 - [ ] (Fase 2) Testar o **movimento anti-AFK** num servidor a sério: os ângulos e o raio são um palpite até haver jogo
-- [ ] **Fazer o `prismarine-chunk` (e `prismarine-registry`, `prismarine-item`) aceitarem o 26.3** — é o que bloqueia a primeira ligação a sério. O `src/versoes.js` remapeia os pacotes do protocolo, mas estas bibliotecas escolhem a implementação pelo nome da versão e não têm entrada para o 26.3. O mesmo que já se faz com `registarFisicas()` para a física
+- [ ] **ViaVersion no servidor 26.3** — para se poder testar o bot contra o servidor do dono do projecto falando um protocolo que a `minecraft-data` conhece. O dono do projecto ofereceu-o e é a saída que funciona hoje
 - [ ] (Fase 2) **Testar contra um servidor a sério** — os testes usam Mineflayer simulado; falta alguém ver o bot a ligar-se de facto
 - [ ] (Fase 2) Mover `createBot()` e os comandos para `src/ligacao.js` e `src/comandos.js`
 - [ ] (Fase 2) Rever `run.cpp`: o `/default` agora deixa um `settings.json.bak`
@@ -42,14 +46,16 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 - [ ] (Fase 3) Traduzir os erros de protocolo mais comuns e dizer quando o servidor usa Via
 - [ ] (Fase 4) Implementar o sidecar local Via, seguindo o desenho em `docs/modded.md`
 - [ ] Testar contra um servidor a sério, seguindo `docs/GUIA-TESTE.md` — o `GUIA` passou a usar o servidor local de `servidores/`, que já não precisa de instalar nada à mão
-- [ ] Testar numa versão que a biblioteca já conhece (1.21.4) para separar "o bot não entra" de "o 26.3 não é suportado"
+- [x] Testar numa versão que a biblioteca já conhece — **feito, 2026-10-02: Paper 1.21, 7 de 7 verificações passaram, o bot entra e mexe-se**
+- [ ] Descobrir por que é que a `prismarine-physics` não reconhece o chão no 26.3, quando o bloco em baixo é lido correctamente
 - [ ] Provar o Node 14.21.3 num Windows 7 a sério, de 32 e de 64 bits
 - [ ] Launcher que instale o Node certo conforme o Windows (ideia I-007)
 
 ## Problemas conhecidos
 
-- **O Mineflayer ainda não entra no Paper 26.3.** A negociação de protocolo passa (o patch do `src/versoes.js` é aplicado e aceito), e depois o `prismarine-chunk` atira `No chunk implementation for pc 26.3 found`, porque escolhe a implementação pelo nome da versão. É o mesmo problema que `registarFisicas()` resolve para a física, aplicado a `prismarine-chunk`, `prismarine-registry` e `prismarine-item`. Ninguém sabe ainda se, registados, os dados do 26.3 servem — é o que o teste a sério vai dizer.
-- **O nosso pedido de estado nunca funcionou contra um servidor a sério.** Só o primeiro servidor Paper real o denunciou: faltava o pacote do pedido (o handshake sozinho não chega) e faltava o comprimento à frente. Os testes antigos passavam porque só olhavam para o tamanho do pacote. Corrigido e agora provado contra o Paper 26.3.
+- **No 26.3 o bot entra e é expulso na mesma.** Já não é o `prismarine-chunk` a chumbar: com o `majorVersion` a apontar para a base e a versão registada no índice, o bot entra na sessão, entra no mundo, carrega blocos e manda movimento. O que falta é o servidor o deixar ficar: `onGround` nunca fica verdadeiro, e a resposta é `invalid player movement`. Ver *Ainda aberto* em `docs/PATCHES-NODE-LEGADO.json`.
+- **O nosso pedido de estado nunca funcionou contra um servidor a sério.** Só o primeiro servidor Paper real o denunciou: faltava o pacote do pedido (o handshake sozinho não chega) e faltava o comprimento à frente. Os testes antigos passavam porque só olhavam para o tamanho do pacote. Corrigido e agora provado contra servidores reais.
+- **A `minecraft-data` mais recente (3.117.0) não conhece o 26.3**, e o repositório upstream também não (verificado na árvore do GitHub: a mais recente é a 26.1). Não há dados para comprar. Ou a upstream ganha o 26.3, ou falamos um protocolo que já conhecemos.
 
 - **Nada foi testado a correr.** O `index.js` restaurado é o mesmo da v2.1 e não foi executado uma única vez nesta sessão. Antes de confiar em qualquer coisa, `npm install` e um teste num servidor de testes.
 - **Chaves do launcher alinhadas** — `error_no_version`, `error_node_fail` e as `msg_*` passaram para os três idiomas; os `lang/*.txt` têm agora as mesmas 69 chaves.
@@ -78,6 +84,29 @@ Fase 2 quase fechada. Falta mover `createBot()` e os comandos para módulos pró
 
 ## Diário de sessões
 
+
+### 2026-10-02 (décima terceira sessão)
+
+**Feito — o bot entrou num servidor a sério, pela primeira vez**
+- Corri o `test/servidor-real.js` contra um **Paper 1.21** local (protocolo 767, que a `minecraft-data` conhece): **7 de 7 verificações passaram**. O bot entra na sessão, entra no mundo, carrega blocos e mexe-se sem ser expulso. Isto prova o `src/movimento.js`, a física e a camadade ligação contra um servidor de verdade.
+- Instalei o Paper 1.21 localmente em `servidores/paper-1.21` (porta 25567) só como grupo de controlo: se o mesmo código falhasse aqui, o problema era nosso e não do 26.3. Passou, logo o problema é do 26.3.
+- O servidor do dono do projecto (`Fabric 26.3`, protocolo 777) responde ao nosso pedido de estado. É modded mas só do lado do servidor, portanto um cliente vanilla entra — e o bot é um cliente vanilla.
+
+**Três correcões para o 26.3, todas provadas**
+1. `majorVersion` passa a ser a versão **base**, não a versão alvo. `majorVersion` é a chave do *formato de dados*, e é por ela que as bibliotecas prismarine escolhem a implementação. Sem isto o `prismarine-chunk` morria com `No chunk implementation for pc 26.3 found`.
+2. A versão passa a ser **registada no índice** da `minecraft-data` (`versionsByMinecraftVersion` e a lista de `protocolVersions`). Sem isto o `dataVersion` dava 0 e **todas** as feature flags davam `false` — o bot entrava no mundo e a física escrevia pacotes de outra maneira. O `dataVersion` deixou de ser um número inventado e passou a ser o da base: o patch copia os dados da base, logo as features da base são as certas.
+3. `teleport_confirm` no 26.3 leva as coordenadas do teleporte. O Mineflayer só mandava o `teleportId` e o servidor respondia `invalid player movement`. Patch feito em `vendor/mineflayer/lib/plugins/physics.js` e registado em `docs/PATCHES-NODE-LEGADO.json`.
+- Mais uma: a leitura da luz dos chunks no 26.3 rebenta, e rebentava **antes** de o chunk ser guardado no mundo, por isso o jogador ficava sem blocos. Passou a ser lida em `try/catch` à parte.
+
+**Onde o 26.3 pára, e porquê**
+- O bot entra no mundo, os blocos carregam bem (`grass_block` debaixo dos pés, `air` onde estou) e o movimento sai. Mas `onGround` nunca fica verdadeiro e o servidor expulsa.
+- Isto já não é remapear identificadores: o `prismarine-chunk` e os blocos estão certos. O que falta é o formato dos dados do chunk e o comportamento da física, que a `prismarine-physics` decide pelas features de `majorVersion`.
+- A `minecraft-data` mais recente (3.117.0, a última no npm) **não** conhece o 26.3, e o repositório upstream também não. Não há dados para comprar. Arranjar isto à mão seria adivinhar, e um palpite errado é pior do que não ter.
+- **Daí a ViaVersion:** com ela no servidor do dono do projecto, o bot fala um protocolo que já conhecemos e passa a poder ser testado a sério contra esse servidor. O 26.3 nativo fica como problema em aberto, com honesta.
+
+**Aprendido**
+- Um teste que só verifica o tamanho de um pacote passa com o pacote errado. Os testes do `pedidoEstado` só olhavam para `length >= 7` e o pedido nunca funcionou contra servidor nenhum. Os testes que verificam bytes apanharam.
+- Um grupo de controlo vale mais que outra hora de adivinhação: o mesmo código contra uma versão conhecida separates "é o nosso código" de "é a versão nova" num minuto.
 
 ### 2026-09-30 (décima segunda sessão)
 
